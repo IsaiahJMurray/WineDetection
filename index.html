@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wine Variety Classifier (Live)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; background: #0b0b0f; color: #e9e9ee; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px; }
+    h1 { font-size: 20px; margin: 0 0 14px; font-weight: 650; }
+    .sub { color: #b9bac6; font-size: 13px; margin-bottom: 14px; line-height: 1.35; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid #2a2b35;
+      background: #12131a;
+      color: #e9e9ee;
+      outline: none;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    textarea:focus { border-color: #5a5cff; box-shadow: 0 0 0 3px rgba(90,92,255,0.18); }
+    .status { display: flex; gap: 10px; align-items: center; color: #b9bac6; font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 99px; background: #666; }
+    .dot.ok { background: #2ecc71; }
+    .dot.bad { background: #e74c3c; }
+    .card {
+      border: 1px solid #242533;
+      background: #12131a;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .bars { display: grid; gap: 10px; }
+    .barRow { display: grid; grid-template-columns: 160px 1fr 64px; gap: 10px; align-items: center; }
+    .label { color: #e9e9ee; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track { height: 10px; background: #1b1c26; border-radius: 999px; overflow: hidden; border: 1px solid #2a2b35; }
+    .fill { height: 100%; width: 0%; background: #5a5cff; border-radius: 999px; transition: width 160ms ease; }
+    .pct { color: #b9bac6; font-variant-numeric: tabular-nums; font-size: 12px; text-align: right; }
+    .small { margin-top: 10px; color: #b9bac6; font-size: 12px; }
+    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    input[type="text"]{
+      padding: 8px 10px; border-radius: 10px; border: 1px solid #2a2b35; background:#12131a; color:#e9e9ee;
+      min-width: 320px;
+    }
+    button{
+      padding: 8px 10px; border-radius: 10px; border: 1px solid #2a2b35; background:#171827; color:#e9e9ee;
+      cursor:pointer;
+    }
+    button:hover{ border-color:#3a3b4a; }
+    code { color: #d7d7ff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Wine Variety Classifier</h1>
+    <div class="sub">
+      Paste a tasting note. The page will call <code>/predict</code> and display live class probabilities (percent).
+      Tip: debounced updates (default 300ms).
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="controls">
+          <label style="font-size:12px;color:#b9bac6;">API URL</label>
+          <input id="apiUrl" type="text" value="https://ectal-unbelievingly-shella.ngrok-free.dev" />
+          <button id="pingBtn">Ping</button>
+          <button id="loadExamplesBtn">Load Examples</button>
+          <span class="status"><span id="dot" class="dot"></span><span id="statusText">Not connected</span></span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div style="color:#b9bac6;font-size:12px;">Client ID: <code id="clientIdEl"></code></div>
+          <button id="copyClientBtn">Copy ID</button>
+          <div style="color:#b9bac6;font-size:12px;">Tokens: <span id="tokensEl">-</span></div>
+          <div style="color:#b9bac6;font-size:12px;">Queue: <span id="queueEl">-</span></div>
+          <div style="color:#b9bac6;font-size:12px;">Users (1h): <span id="usersHourEl">-</span></div>
+        </div>
+        <div id="examplesPanel" style="margin-top:10px;display:none;">
+          <label style="font-size:12px;color:#b9bac6;">Category</label>
+          <select id="categorySelect" style="margin-left:8px;padding:6px;border-radius:8px;background:#12131a;color:#e9e9ee;border:1px solid #2a2b35;"></select>
+          <label style="font-size:12px;color:#b9bac6;margin-left:12px;">Example</label>
+          <select id="exampleSelect" style="margin-left:8px;padding:6px;border-radius:8px;background:#12131a;color:#e9e9ee;border:1px solid #2a2b35;min-width:320px;"></select>
+        </div>
+        <div style="height:10px"></div>
+        <textarea id="text" placeholder="Example: black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
+        <div class="small" id="meta"></div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:13px;color:#b9bac6;margin-bottom:10px;">Predicted probabilities</div>
+        <div class="bars" id="bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Debounce helper ---
+    function debounce(fn, delayMs) {
+      let t = null;
+      return (...args) => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => fn(...args), delayMs);
+      };
+    }
+
+    const textEl = document.getElementById("text");
+    const barsEl = document.getElementById("bars");
+    const apiUrlEl = document.getElementById("apiUrl");
+    const metaEl = document.getElementById("meta");
+    const statusText = document.getElementById("statusText");
+    const dot = document.getElementById("dot");
+    const pingBtn = document.getElementById("pingBtn");
+    const loadExamplesBtn = document.getElementById("loadExamplesBtn");
+    const examplesPanel = document.getElementById("examplesPanel");
+    const categorySelect = document.getElementById("categorySelect");
+    const exampleSelect = document.getElementById("exampleSelect");
+    const clientIdEl = document.getElementById("clientIdEl");
+    const copyClientBtn = document.getElementById("copyClientBtn");
+    const tokensEl = document.getElementById("tokensEl");
+    const queueEl = document.getElementById("queueEl");
+    const usersHourEl = document.getElementById("usersHourEl");
+
+    function setStatus(ok, msg) {
+      statusText.textContent = msg;
+      dot.className = "dot " + (ok ? "ok" : "bad");
+    }
+
+    // --- client id stored in localStorage ---
+    let clientId = localStorage.getItem('qea_client_id');
+    if (!clientId) {
+      if (window.crypto && crypto.randomUUID) clientId = crypto.randomUUID();
+      else clientId = 'c-' + Math.random().toString(36).slice(2,12);
+      localStorage.setItem('qea_client_id', clientId);
+    }
+    clientIdEl.textContent = clientId;
+    copyClientBtn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(clientId); } catch (e) { /* ignore */ }
+    });
+
+    function renderBars(predictions) {
+      // Sort by probability desc
+      const entries = Object.entries(predictions).sort((a,b) => b[1] - a[1]);
+
+      barsEl.innerHTML = "";
+      for (const [label, pct] of entries) {
+        const row = document.createElement("div");
+        row.className = "barRow";
+
+        const labelEl = document.createElement("div");
+        labelEl.className = "label";
+        labelEl.textContent = label;
+
+        const track = document.createElement("div");
+        track.className = "track";
+
+        const fill = document.createElement("div");
+        fill.className = "fill";
+        fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
+
+        track.appendChild(fill);
+
+        const pctEl = document.createElement("div");
+        pctEl.className = "pct";
+        pctEl.textContent = pct.toFixed(2) + "%";
+
+        row.appendChild(labelEl);
+        row.appendChild(track);
+        row.appendChild(pctEl);
+
+        barsEl.appendChild(row);
+      }
+    }
+
+    async function predictNow() {
+      const apiUrl = apiUrlEl.value.trim();
+      const text = textEl.value.trim();
+
+      if (!text) {
+        barsEl.innerHTML = "<div style='color:#b9bac6;font-size:12px;'>Enter text to see predictions.</div>";
+        metaEl.textContent = "";
+        return;
+      }
+
+      const t0 = performance.now();
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-client-id": clientId },
+          body: JSON.stringify({ text })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          setStatus(false, `HTTP ${res.status}`);
+          metaEl.textContent = errText.slice(0, 200);
+          return;
+        }
+
+        const data = await res.json();
+        const dt = (performance.now() - t0).toFixed(0);
+
+        setStatus(true, `OK (${dt} ms)`);
+        metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
+
+        renderBars(data.predictions || {});
+      } catch (e) {
+        setStatus(false, "Disconnected");
+        metaEl.textContent = String(e);
+      }
+    }
+
+    const predictDebounced = debounce(predictNow, 300);
+
+    textEl.addEventListener("input", () => predictDebounced());
+
+    pingBtn.addEventListener("click", async () => {
+      // simple ping: run predict on a short dummy input
+      const prev = textEl.value;
+      if (!prev.trim()) textEl.value = "black cherry, oak, tannins";
+      await predictNow();
+      if (!prev.trim()) textEl.value = "";
+    });
+
+    // --- Examples handling ---
+    function examplesBaseUrl() {
+      // derive base from the predict URL; remove trailing /predict
+      const api = apiUrlEl.value.trim();
+      return api.replace(/\/predict\/?$/i, "").replace(/\/$/, "");
+    }
+
+    async function loadExamples() {
+      const base = examplesBaseUrl();
+      const url = base + "/api/examples";
+      try {
+        const res = await fetch(url, { headers: { "x-client-id": clientId } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        // populate category select
+        categorySelect.innerHTML = "";
+        for (const k of Object.keys(data)) {
+          const opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = k;
+          categorySelect.appendChild(opt);
+        }
+
+        // trigger fill for first category
+        if (categorySelect.options.length > 0) {
+          categorySelect.selectedIndex = 0;
+          populateExamplesFor(categorySelect.value, data);
+        }
+
+        examplesPanel.style.display = "block";
+        setStatus(true, "Loaded examples");
+      } catch (e) {
+        setStatus(false, "Examples load failed");
+        console.error(e);
+      }
+    }
+
+    function populateExamplesFor(category, data) {
+      const arr = data[category] || [];
+      exampleSelect.innerHTML = "";
+      for (const ex of arr) {
+        const o = document.createElement('option');
+        o.value = ex;
+        o.textContent = ex.length > 120 ? ex.slice(0, 120) + '...' : ex;
+        exampleSelect.appendChild(o);
+      }
+    }
+
+    loadExamplesBtn.addEventListener('click', async () => {
+      await loadExamples();
+    });
+
+    categorySelect.addEventListener('change', async () => {
+      // re-fetch to ensure we have the latest mapping (cheap)
+      const base = examplesBaseUrl();
+      const url = base + "/api/examples";
+      try {
+        const res = await fetch(url, { headers: { "x-client-id": clientId } });
+        const data = await res.json();
+        populateExamplesFor(categorySelect.value, data);
+      } catch (e) { console.error(e); }
+    });
+
+    // --- status polling ---
+    async function fetchStatus() {
+      const base = examplesBaseUrl();
+      const url = base + "/api/status";
+      try {
+        const res = await fetch(url, { headers: { "x-client-id": clientId } });
+        if (!res.ok) return;
+        const data = await res.json();
+        tokensEl.textContent = data.tokens;
+        queueEl.textContent = data.queue_len;
+        usersHourEl.textContent = data.users_past_hour;
+      } catch (e) { /* ignore */ }
+    }
+
+    // poll every 5s
+    fetchStatus();
+    setInterval(fetchStatus, 5000);
+
+    exampleSelect.addEventListener('change', () => {
+      const v = exampleSelect.value || '';
+      if (v) {
+        textEl.value = v;
+        predictNow();
+      }
+    });
+
+    // initial
+    barsEl.innerHTML = "<div style='color:#b9bac6;font-size:12px;'>Enter text to see predictions.</div>";
+  </script>
+</body>
+</html>
