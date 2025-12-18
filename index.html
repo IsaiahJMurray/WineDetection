@@ -52,6 +52,9 @@
       cursor:pointer;
     }
     button:hover{ border-color:#3a3b4a; }
+    button:disabled{ opacity:0.5; cursor:not-allowed; }
+    #requestBtn:hover{ background:#6a6cff; border-color:#6a6cff; }
+    #requestBtn:disabled{ background:#3a3b4a; border-color:#3a3b4a; }
     code { color: #d7d7ff; }
   </style>
 </head>
@@ -86,7 +89,13 @@
           <select id="exampleSelect" style="margin-left:8px;padding:6px;border-radius:8px;background:#12131a;color:#e9e9ee;border:1px solid #2a2b35;min-width:320px;"></select>
         </div>
         <div style="height:10px"></div>
-        <textarea id="text" placeholder="Example: black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
+        <div style="position:relative;display:flex;flex-direction:column;gap:8px;">
+          <textarea id="text" placeholder="Example: black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
+          <div id="queueModeNotice" style="display:none;color:#ffa500;font-size:12px;padding:8px;background:#2a1f0a;border-radius:6px;border:1px solid #ffa50040;">
+            ⚠️ Rate limited: Real-time updates disabled. Use "Request Prediction" button to queue requests.
+          </div>
+          <button id="requestBtn" style="display:none;align-self:flex-end;padding:8px 20px;border-radius:8px;border:1px solid #5a5cff;background:#5a5cff;color:#fff;cursor:pointer;font-size:13px;font-weight:500;">Request Prediction</button>
+        </div>
         <div class="small" id="meta"></div>
       </div>
 
@@ -99,12 +108,19 @@
 
   <script>
     // --- Debounce helper ---
+    let debounceTimer = null;
     function debounce(fn, delayMs) {
-      let t = null;
       return (...args) => {
-        if (t) clearTimeout(t);
-        t = setTimeout(() => fn(...args), delayMs);
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => fn(...args), delayMs);
       };
+    }
+    
+    function cancelDebounced() {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
     }
 
     const textEl = document.getElementById("text");
@@ -123,6 +139,12 @@
     const tokensEl = document.getElementById("tokensEl");
     const queueEl = document.getElementById("queueEl");
     const usersHourEl = document.getElementById("usersHourEl");
+    const requestBtn = document.getElementById("requestBtn");
+    const queueModeNotice = document.getElementById("queueModeNotice");
+    
+    // Track real-time mode state
+    let realtimeEnabled = true;
+    let pendingRequest = false;
 
     function setStatus(ok, msg) {
       statusText.textContent = msg;
@@ -198,6 +220,10 @@
     }
 
     async function predictNow() {
+      if (pendingRequest) {
+        return; // Prevent multiple simultaneous requests
+      }
+      
       const apiUrl = apiUrlEl.value.trim();
       const text = textEl.value.trim();
 
@@ -205,6 +231,13 @@
         barsEl.innerHTML = "<div style='color:#b9bac6;font-size:12px;'>Enter text to see predictions.</div>";
         metaEl.textContent = "";
         return;
+      }
+
+      pendingRequest = true;
+      requestBtn.disabled = true;
+      if (!realtimeEnabled) {
+        setStatus(false, "Waiting in queue...");
+        requestBtn.textContent = "Processing...";
       }
 
       const t0 = performance.now();
@@ -231,7 +264,13 @@
           
           if (res.status === 429) {
             setStatus(false, "Rate limited");
-            metaEl.textContent = `Rate limit: ${errorMsg}. Check tokens/queue above.`;
+            metaEl.textContent = `Rate limit: ${errorMsg}. Use Request button when ready.`;
+            // Enter queue mode immediately
+            cancelDebounced(); // Cancel any pending debounced calls
+            realtimeEnabled = false;
+            updateRealtimeMode();
+            // Trigger status check to get accurate queue state
+            setTimeout(() => fetchStatus(), 500);
           } else if (res.status === 413) {
             setStatus(false, "Request too long");
             metaEl.textContent = `Request too long: ${errorMsg}`;
@@ -255,16 +294,33 @@
         metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
 
         renderBars(data.predictions || {});
+        
+        // Check status after successful request to see if we should re-enable real-time
+        // (This will be updated by the next status poll, but we can trigger a check)
+        setTimeout(() => fetchStatus(), 500);
       } catch (e) {
         setStatus(false, "Error");
         metaEl.textContent = String(e).slice(0,200);
         console.error('predictNow error', e);
-        return;
+      } finally {
+        pendingRequest = false;
+        requestBtn.disabled = false;
+        requestBtn.textContent = "Request Prediction";
       }
     }
     const predictDebounced = debounce(predictNow, 300);
 
-    textEl.addEventListener("input", () => predictDebounced());
+    // Only enable debounced input when real-time is enabled
+    textEl.addEventListener("input", () => {
+      if (realtimeEnabled && !pendingRequest) {
+        predictDebounced();
+      }
+    });
+    
+    // Request button handler
+    requestBtn.addEventListener("click", async () => {
+      await predictNow();
+    });
 
     pingBtn.addEventListener("click", async () => {
       // simple ping: run predict on a short dummy input
@@ -336,6 +392,34 @@
       } catch (e) { console.error(e); }
     });
 
+    // Update real-time mode based on tokens and queue
+    function updateRealtimeMode() {
+      const tokens = parseInt(tokensEl.textContent) || 0;
+      const queueLen = parseInt(queueEl.textContent) || 0;
+      
+      // Enable real-time if we have tokens and no queue
+      const shouldEnable = tokens > 0 && queueLen === 0;
+      
+      if (shouldEnable !== realtimeEnabled) {
+        realtimeEnabled = shouldEnable;
+        
+        if (realtimeEnabled) {
+          // Re-enable real-time: hide button and notice, enable debounced input
+          requestBtn.style.display = 'none';
+          queueModeNotice.style.display = 'none';
+          if (textEl.value.trim() && !pendingRequest) {
+            // Trigger immediate update if text exists
+            predictDebounced();
+          }
+        } else {
+          // Disable real-time: show button and notice, disable debounced input
+          cancelDebounced(); // Cancel any pending debounced calls
+          requestBtn.style.display = 'block';
+          queueModeNotice.style.display = 'block';
+        }
+      }
+    }
+    
     // --- status polling ---
     async function fetchStatus() {
       const base = examplesBaseUrl();
@@ -345,6 +429,9 @@
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
+        
+        // Update real-time mode based on new status
+        updateRealtimeMode();
       } catch (e) {
         console.error('fetchStatus failed', e);
         tokensEl.textContent = 'ERR';
@@ -353,15 +440,25 @@
       }
     }
 
-    // poll every 5s
-    fetchStatus();
+    // Initial status check and poll every 5s
+    fetchStatus().then(() => {
+      // Set initial real-time mode after first status fetch
+      updateRealtimeMode();
+    });
     setInterval(fetchStatus, 5000);
 
     exampleSelect.addEventListener('change', () => {
       const v = exampleSelect.value || '';
       if (v) {
         textEl.value = v;
-        predictNow();
+        // If real-time is enabled, use debounced; otherwise use manual request
+        if (realtimeEnabled && !pendingRequest) {
+          predictDebounced();
+        } else {
+          // In queue mode, user needs to click button manually
+          // But we can auto-trigger if they select an example
+          predictNow();
+        }
       }
     });
 

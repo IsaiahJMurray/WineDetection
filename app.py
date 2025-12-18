@@ -14,11 +14,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 
-MODEL_DIR = "outputs\distilbert-base-uncased_top4_20251217_144633\model\checkpoint-2582"
+# Use Path to normalize the path (handles Windows backslashes correctly)
+MODEL_DIR = str(Path("outputs\\distilbert-base-uncased_top4_20251217_150923\\model\\checkpoint-2582").resolve())
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, use_fast=True)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR).to(DEVICE)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, use_fast=True, local_files_only=True)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR, local_files_only=True).to(DEVICE)
 model.eval()
 
 # --- Rate limit / queue configuration ---
