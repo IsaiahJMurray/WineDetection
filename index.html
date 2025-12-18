@@ -223,7 +223,11 @@
           console.error('predictNow error', e);
           return;
         }
-      }
+      } catch (e) {
+          setStatus(false, "Disconnected");
+          metaEl.textContent = String(e).slice(0,200);
+          console.error('general error', e);
+          return;
     }
 
     const predictDebounced = debounce(predictNow, 300);

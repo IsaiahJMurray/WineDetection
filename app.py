@@ -9,6 +9,7 @@ import asyncio
 import time
 from typing import Dict
 from fastapi.responses import JSONResponse
+from fastapi.responses import PlainTextResponse
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -210,3 +211,28 @@ def get_examples():
         return data
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+def _cors_preflight_response():
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, X-Client-Id, Authorization",
+        "Access-Control-Allow-Credentials": "true",
+    }
+    return PlainTextResponse("OK", status_code=200, headers=headers)
+
+
+@app.options("/predict")
+def predict_options():
+    return _cors_preflight_response()
+
+
+@app.options("/api/examples")
+def examples_options():
+    return _cors_preflight_response()
+
+
+@app.options("/api/status")
+def status_options():
+    return _cors_preflight_response()
