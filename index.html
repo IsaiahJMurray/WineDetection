@@ -7,525 +7,425 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon">
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    :root {
-      --bg-primary: #0a0a0f;
-      --bg-secondary: #0f0f15;
-      --bg-tertiary: #151520;
-      --border: #1a1a25;
-      --border-light: #252530;
-      --text-primary: #e8e8f0;
-      --text-secondary: #a0a0b0;
-      --text-tertiary: #606070;
-      --accent: #6366f1;
-      --accent-glow: rgba(99, 102, 241, 0.15);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --error: #ef4444;
-      --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    :root{
+      --bg:#0a0a0f;
+      --card:rgba(15,15,21,.92);
+      --card2:rgba(18,18,26,.88);
+      --border:#1a1a25;
+      --border2:#252530;
+      --text:#e8e8f0;
+      --muted:#a0a0b0;
+      --muted2:#606070;
+      --accent:#6366f1;
+      --glow:rgba(99,102,241,.16);
+      --ok:#10b981;
+      --bad:#ef4444;
+      --warn:#f59e0b;
+      --grad:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);
 
-      --kb-inset: 0px;
-      --header-h: 120px;
-      --composer-h: 240px;
+      --kb:0px;
+      --hh:64px;     /* header height (measured) */
+      --ch:128px;    /* composer height (measured) */
 
-      --ease-out: cubic-bezier(0.2, 0.9, 0.2, 1);
-      --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
-      --dur-fast: 160ms;
-      --dur-med: 360ms;
-      --dur-slow: 720ms;
+      --r:14px;
+      --ease:cubic-bezier(.2,.9,.2,1);
+      --ease2:cubic-bezier(.4,0,.2,1);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      overflow-x: hidden;
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
     }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+    body::before{
+      content:'';
+      position:fixed;
+      inset:0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
+        radial-gradient(circle at 18% 38%, rgba(99,102,241,.04) 0%, transparent 50%),
+        radial-gradient(circle at 82% 78%, rgba(139,92,246,.04) 0%, transparent 55%);
+      pointer-events:none;
+      z-index:0;
     }
 
-    /* Desktop container */
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 40px 24px;
-      position: relative;
-      z-index: 1;
+    /* Desktop layout (kept solid; mobile-first overrides below) */
+    .container{
+      max-width:980px;
+      margin:0 auto;
+      padding:28px 18px;
+      position:relative;
+      z-index:1;
+    }
+    .header{
+      text-align:center;
+      margin-bottom:18px;
+    }
+    .header h1{
+      font-size:30px;
+      font-weight:800;
+      letter-spacing:-.6px;
+      background:var(--grad);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:6px;
+    }
+    .header p{color:var(--muted);font-size:14px}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+    @media(min-width:900px){
+      .grid{grid-template-columns:1.1fr .9fr; gap:18px;}
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-      animation: fadeInDown 0.6s ease-out;
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      backdrop-filter:blur(10px);
+      overflow:hidden;
+      position:relative;
+    }
+    .card-inner{padding:16px}
+    @media(min-width:900px){
+      .card-inner{padding:18px}
     }
 
-    .header h1 {
-      font-size: 36px;
-      font-weight: 700;
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 10px;
-      letter-spacing: -0.5px;
+    .title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+    .title::after{
+      content:'';
+      height:1px;
+      flex:1;
+      background:var(--border);
     }
 
-    .header p {
-      color: var(--text-secondary);
-      font-size: 16px;
-      font-weight: 400;
+    /* RESULTS */
+    .results-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .sub{
+      font-size:11px;
+      color:var(--muted2);
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+    }
+    .placeholder{
+      padding:22px 10px;
+      text-align:center;
+      color:var(--muted2);
+      font-size:12px;
     }
 
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 24px;
-      align-items: start;
+    .bars{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
     }
 
-    @media (min-width: 900px) {
-      .main-grid { grid-template-columns: 1fr 1fr; }
+    /* Compact bar row */
+    .row{
+      background:var(--card2);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 10px 10px;
+    }
+    .row-top{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:7px;
+    }
+    .label{
+      font-size:12px;
+      font-weight:600;
+      color:var(--text);
+      max-width:72%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .pct{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      font-variant-numeric:tabular-nums;
+    }
+    .track{
+      height:10px;
+      background:#13131c;
+      border-radius:999px;
+      overflow:hidden;
+      position:relative;
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      background:var(--grad);
+      border-radius:999px;
+      transition:width 640ms var(--ease2);
+      box-shadow:0 0 8px rgba(99,102,241,.28);
+      position:relative;
+    }
+    .fill::after{
+      content:'';
+      position:absolute; inset:0;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+      animation:shimmer 3.0s infinite;
+      pointer-events:none;
+    }
+    @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+    /* INPUT */
+    textarea{
+      width:100%;
+      min-height:140px;
+      padding:12px 12px;
+      border-radius:12px;
+      background:#151520;
+      border:1px solid var(--border);
+      color:var(--text);
+      font-size:14px;
+      line-height:1.35;
+      outline:none;
+      resize:vertical;
+      transition:border-color 140ms var(--ease2), box-shadow 140ms var(--ease2), opacity 140ms var(--ease2);
+    }
+    textarea::placeholder{color:var(--muted2)}
+    textarea:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px var(--glow);
+    }
+    textarea[readonly].locked{
+      opacity:.72;
+      cursor:not-allowed;
+    }
+    textarea[readonly].locked:focus{
+      border-color:var(--border);
+      box-shadow:none;
     }
 
-    .card {
-      background: rgba(15, 15, 21, 0.86);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      backdrop-filter: blur(10px);
-      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout);
-      position: relative;
-      overflow: hidden;
+    .queue{
+      margin-top:8px;
+      padding:9px 10px;
+      border-radius:10px;
+      background:rgba(245,158,11,.10);
+      border:1px solid rgba(245,158,11,.25);
+      color:var(--warn);
+      font-size:11px;
+      display:none;
     }
 
-    .card:hover {
-      border-color: var(--border-light);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    .btn{
+      margin-top:10px;
+      display:none;
+      width:100%;
+      padding:11px 14px;
+      border-radius:12px;
+      border:none;
+      background:var(--grad);
+      color:white;
+      font-weight:700;
+      font-size:13px;
+      cursor:pointer;
+      box-shadow:0 6px 18px rgba(99,102,241,.22);
+      transition:transform 140ms var(--ease2), opacity 140ms var(--ease2);
+    }
+    .btn:disabled{opacity:.65; cursor:not-allowed}
+    .btn:active{transform:scale(.99)}
+
+    .status{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:11px;
+      color:var(--muted);
+    }
+    .dot{
+      width:8px;height:8px;border-radius:99px;
+      background:var(--muted2);
+      animation:pulse 2s infinite;
+    }
+    .dot.ok{background:var(--ok); box-shadow:0 0 8px rgba(16,185,129,.45)}
+    .dot.bad{background:var(--bad); box-shadow:0 0 8px rgba(239,68,68,.45)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+    .meta{
+      margin-top:6px;
+      font-size:11px;
+      color:var(--muted2);
     }
 
-    .card-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .adv{
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid var(--border);
+    }
+    .adv-btn{
+      background:none;border:none;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:700;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 0;
+    }
+    .adv-btn::after{content:'▼';font-size:10px;transition:transform 260ms var(--ease2)}
+    .adv-btn.expanded::after{transform:rotate(180deg)}
+    .adv-panel{
+      max-height:0;
+      overflow:hidden;
+      opacity:0;
+      transition:max-height 260ms var(--ease2), opacity 260ms var(--ease2);
+    }
+    .adv-panel.visible{max-height:900px; opacity:1; margin-top:10px;}
+    .adv-row{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+    .adv-label{
+      font-size:11px;
+      font-weight:700;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+    .adv-input, select{
+      padding:10px 11px;
+      border-radius:10px;
+      background:#151520;
+      border:1px solid var(--border);
+      color:var(--text);
+      outline:none;
+      font-size:12px;
+    }
+    .adv-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .sec{
+      padding:9px 10px;
+      border-radius:10px;
+      background:#151520;
+      border:1px solid var(--border);
+      color:var(--text);
+      font-size:12px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .sec:active{transform:scale(.99)}
+    .examples{display:none;margin-top:10px;}
+    .examples.visible{display:block;}
+    .eg-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:8px}
+    .stats{
+      display:flex;gap:12px;flex-wrap:wrap;
+      margin-top:10px;padding-top:10px;border-top:1px solid var(--border);
+      font-size:11px;color:var(--muted);
+    }
+    .stats b{color:var(--text);font-weight:800}
+
+    @media (prefers-reduced-motion: reduce){
+      *{animation-duration:1ms !important; animation-iteration-count:1 !important; transition-duration:1ms !important;}
+      .fill::after{display:none}
     }
 
-    .card-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-      opacity: 0.9;
-    }
+    /* ============================================================
+       MOBILE: ultra-compact app shell
+       - header fixed (small)
+       - results fixed between header & composer
+       - composer fixed above keyboard
+       - tiny input text/height
+       ============================================================ */
+    @media (max-width: 899px){
+      .container{max-width:100%; padding:0;}
 
-    /* Results header row */
-    .results-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
+      .header{
+        position:fixed;
+        top:0; left:0; right:0;
+        z-index:50;
+        padding:10px 12px 8px;
+        background:rgba(10,10,15,.92);
+        backdrop-filter:blur(10px);
+        border-bottom:1px solid var(--border);
+        text-align:left;
+      }
+      .header h1{font-size:18px; margin:0 0 2px; letter-spacing:-.4px;}
+      .header p{font-size:11px; line-height:1.2}
 
-    .results-sub {
-      font-size: 12px;
-      color: var(--text-tertiary);
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-    }
+      .grid{display:block; padding:0;}
 
-    .results-placeholder {
-      color: var(--text-tertiary);
-      font-size: 14px;
-      text-align: center;
-      padding: 52px 16px;
-    }
+      /* Results pane: tight margins, scrollable */
+      .results{
+        position:fixed;
+        left:10px; right:10px;
+        top:calc(var(--hh) + 8px);
+        bottom:calc(var(--ch) + var(--kb) + env(safe-area-inset-bottom) + 8px);
+        z-index:20;
+        overflow:auto;
+        -webkit-overflow-scrolling:touch;
+      }
+      .results .card-inner{padding:12px;}
 
-    /* Bars */
-    .bars {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      position: relative;
-    }
-
-    /* Desktop row layout: label | bar | pct */
-    .bar-row {
-      display: grid;
-      grid-template-columns: minmax(130px, 170px) 1fr 74px;
-      gap: 14px;
-      align-items: center;
-      will-change: transform;
-      transform: translateZ(0);
-    }
-
-    .bar-top {
-      display: contents; /* desktop: let label/pct take grid slots */
-    }
-
-    .bar-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .bar-track {
-      height: 8px;
-      background: var(--bg-tertiary);
-      border-radius: 999px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .bar-fill {
-      height: 100%;
-      background: var(--gradient);
-      border-radius: 999px;
-      width: 0%;
-      box-shadow: 0 0 8px rgba(99, 102, 241, 0.35);
-      transition: width var(--dur-slow) var(--ease-inout);
-      position: relative;
-    }
-
-    .bar-fill::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
-      animation: shimmer 3.2s infinite;
-      pointer-events: none;
-    }
-
-    .bar-pct {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Entry/exit animation (no height changes) */
-    .enter {
-      opacity: 0;
-      transform: translateY(10px) scale(0.98);
-      animation: popIn var(--dur-med) var(--ease-out) forwards;
-    }
-
-    .exit {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-      transition: opacity var(--dur-fast) var(--ease-inout), transform var(--dur-fast) var(--ease-inout);
-    }
-
-    .exit.final {
-      opacity: 0;
-      transform: translateY(-6px) scale(0.98);
-    }
-
-    @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } }
-    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-    /* Textarea */
-    textarea {
-      width: 100%;
-      min-height: 170px;
-      padding: 16px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text-primary);
-      font-size: 15px;
-      font-family: inherit;
-      line-height: 1.6;
-      outline: none;
-      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), background var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
-      resize: vertical;
-    }
-
-    textarea::placeholder { color: var(--text-tertiary); }
-    textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-      background: rgba(15, 15, 21, 0.9);
-    }
-
-    /* Lock state: prevent edits but allow scroll/copy */
-    textarea[readonly].locked { opacity: 0.75; cursor: not-allowed; }
-    textarea[readonly].locked:focus { border-color: var(--border); box-shadow: none; }
-
-    /* Queue notice */
-    .queue-notice {
-      margin-top: 12px;
-      padding: 12px 14px;
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      border-radius: 10px;
-      color: var(--warning);
-      font-size: 13px;
-      display: none;
-    }
-
-    /* Request button */
-    .request-btn {
-      margin-top: 14px;
-      padding: 12px 18px;
-      background: var(--gradient);
-      border: none;
-      border-radius: 10px;
-      color: white;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
-      display: none;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-    }
-
-    .request-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
-    .request-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 14px;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--text-tertiary);
-      animation: pulse 2s infinite;
-    }
-    .status-dot.ok { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
-    .status-dot.bad { background: var(--error); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
-
-    .meta { margin-top: 10px; font-size: 12px; color: var(--text-tertiary); }
-
-    /* Advanced */
-    .advanced-toggle {
-      margin-top: 20px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
-    }
-
-    .advanced-btn {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 8px 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .advanced-btn:hover { color: var(--accent); }
-    .advanced-btn::after { content: '▼'; font-size: 10px; transition: transform var(--dur-med) var(--ease-inout); }
-    .advanced-btn.expanded::after { transform: rotate(180deg); }
-
-    .advanced-panel {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height var(--dur-med) var(--ease-inout), opacity var(--dur-med) var(--ease-inout);
-      opacity: 0;
-    }
-
-    .advanced-panel.visible { max-height: 1000px; opacity: 1; margin-top: 16px; }
-
-    .advanced-section { display: flex; flex-direction: column; gap: 14px; }
-    .advanced-row { display: flex; flex-direction: column; gap: 8px; }
-
-    .advanced-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .advanced-input, select {
-      padding: 10px 12px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-    }
-
-    .advanced-input:focus, select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-glow);
-    }
-
-    .advanced-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .btn-secondary {
-      padding: 8px 14px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .btn-secondary:hover { border-color: var(--border-light); }
-
-    .examples-panel { margin-top: 10px; display: none; }
-    .examples-panel.visible { display: block; }
-    .examples-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
-
-    .stats-row {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-
-    .stat-item { font-size: 12px; color: var(--text-secondary); }
-    .stat-value { color: var(--text-primary); font-weight: 600; }
-
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
-      .bar-fill::after { display: none; }
-    }
-
-    /* ----------------------------------------------------
-       MOBILE APP SHELL (no overlap; header/results/composer)
-       ---------------------------------------------------- */
-    @media (max-width: 899px) {
-      .container {
-        max-width: 100%;
-        padding: 0;
+      /* Sticky results head to preserve context */
+      .results-head{
+        position:sticky;
+        top:0;
+        z-index:25;
+        padding:6px 0 8px;
+        background:rgba(15,15,21,.92);
+        backdrop-filter:blur(10px);
       }
 
-      /* Fixed header at top */
-      .header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 30;
-        margin: 0;
-        padding: 16px 16px 12px;
-        background: rgba(10,10,15,0.92);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid var(--border);
-        text-align: left;
+      .title{font-size:11px; margin-bottom:8px;}
+      .sub{font-size:10px;}
+
+      /* Even tighter bars */
+      .bars{gap:7px;}
+      .row{padding:9px 9px 9px;}
+      .label{font-size:11px; max-width:70%;}
+      .pct{font-size:11px;}
+      .track{height:9px;}
+
+      /* Composer: very compact */
+      .composer{
+        position:fixed;
+        left:10px; right:10px;
+        bottom:calc(var(--kb) + env(safe-area-inset-bottom) + 8px);
+        z-index:40;
       }
-
-      .header h1 { font-size: 24px; margin-bottom: 4px; }
-      .header p { font-size: 13px; }
-
-      /* Disable hover visuals on touch */
-      .card:hover { box-shadow: none; }
-
-      /* We do not use grid flow on mobile */
-      .main-grid { display: block; padding: 0; }
-
-      /* Results pane fixed between header and composer */
-      .results-card {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        top: calc(8px + var(--header-h));
-        bottom: calc(12px + var(--composer-h) + var(--kb-inset) + env(safe-area-inset-bottom));
-        z-index: 10;
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 14px;
+      .composer .card-inner{padding:12px;}
+      textarea{
+        min-height:64px;
+        max-height:16vh;
+        font-size:12px;
+        line-height:1.25;
+        padding:10px 10px;
+        resize:none;
       }
-
-      .results-head {
-        position: sticky;
-        top: 0;
-        z-index: 12;
-        padding: 8px 0 10px;
-        background: rgba(15, 15, 21, 0.92);
-        backdrop-filter: blur(10px);
-      }
-
-      /* Composer fixed above keyboard */
-      .input-card {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        bottom: calc(12px + var(--kb-inset) + env(safe-area-inset-bottom));
-        z-index: 20;
-        padding: 14px;
-      }
-
-      textarea {
-        min-height: 96px;
-        max-height: 22vh;
-        resize: none;
-      }
-
-      /* Mobile prediction layout: condensed & readable */
-      .bar-row {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 10px 10px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: rgba(21, 21, 32, 0.55);
-      }
-
-      .bar-top {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      .bar-label {
-        font-size: 13px;
-        max-width: 70%;
-      }
-
-      .bar-pct {
-        font-size: 13px;
-        text-align: right;
-      }
-
-      .bar-track { height: 10px; }
+      .queue{font-size:10px; padding:8px 9px;}
+      .btn{padding:10px 12px; font-size:12px; border-radius:12px;}
+      .status{font-size:10px; margin-top:8px;}
+      .meta{font-size:10px;}
     }
   </style>
 </head>
@@ -534,234 +434,198 @@
   <div class="container">
     <div class="header" id="header">
       <h1>Wine Classifier</h1>
-      <p>Enter a tasting note to predict the variety</p>
+      <p>Paste a tasting note. Top probabilities update with bars.</p>
     </div>
 
-    <div class="main-grid">
-      <div class="card results-card" id="resultsCard">
-        <div class="results-head">
-          <div class="card-title" style="margin-bottom:0;">Predictions</div>
-          <div class="results-sub" id="resultsSub">—</div>
-        </div>
-
-        <div class="bars" id="bars">
-          <div class="results-placeholder" id="placeholder">Enter a tasting note to see predictions</div>
+    <div class="grid">
+      <div class="card results results" id="resultsCard">
+        <div class="card-inner">
+          <div class="results-head">
+            <div class="results-head">
+              <div class="title" style="margin:0;">Predictions</div>
+              <div class="sub" id="resultsSub">—</div>
+            </div>
+          </div>
+          <div class="bars" id="bars">
+            <div class="placeholder" id="placeholder">Type a tasting note to see probabilities.</div>
+          </div>
         </div>
       </div>
 
-      <div class="card input-card" id="composer">
-        <div class="card-title">Tasting Note</div>
-        <textarea id="text" placeholder="e.g., black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
+      <div class="card composer" id="composer">
+        <div class="card-inner">
+          <div class="title">Tasting Note</div>
+          <textarea id="text" placeholder="black cherry, oak, tannins…"></textarea>
 
-        <div id="queueModeNotice" class="queue-notice">
-          ⚠️ Rate limited: real-time updates disabled. Requests are queued; editing is temporarily locked.
-        </div>
+          <div id="queueModeNotice" class="queue">
+            Rate limited: real-time disabled. Request once; input locked while queued.
+          </div>
 
-        <button id="requestBtn" class="request-btn">Request Prediction</button>
+          <button id="requestBtn" class="btn">Request Prediction</button>
 
-        <div class="status-indicator">
-          <span id="dot" class="status-dot"></span>
-          <span id="statusText">Connecting...</span>
-        </div>
+          <div class="status">
+            <span id="dot" class="dot"></span>
+            <span id="statusText">Connecting…</span>
+          </div>
 
-        <div class="meta" id="meta"></div>
+          <div class="meta" id="meta"></div>
 
-        <div class="advanced-toggle">
-          <button id="advancedToggle" class="advanced-btn">Advanced Settings</button>
-          <div id="advancedPanel" class="advanced-panel">
-            <div class="advanced-section">
-              <div class="advanced-row">
-                <label class="advanced-label">API Endpoint</label>
-                <input id="apiUrl" type="text" class="advanced-input" value="https://ectal-unbelievingly-shella.ngrok-free.dev/predict" />
+          <div class="adv">
+            <button id="advancedToggle" class="adv-btn">Advanced</button>
+            <div id="advancedPanel" class="adv-panel">
+              <div class="adv-row">
+                <label class="adv-label">API Endpoint</label>
+                <input id="apiUrl" class="adv-input" type="text"
+                       value="https://ectal-unbelievingly-shella.ngrok-free.dev/predict" />
               </div>
 
-              <div class="advanced-row">
-                <label class="advanced-label">Live Update Speed (ms)</label>
-                <input id="debounceDelay" type="number" class="advanced-input" value="150" min="50" max="1000" step="50" />
+              <div class="adv-row">
+                <label class="adv-label">Live Update Speed (ms)</label>
+                <input id="debounceDelay" class="adv-input" type="number" value="200" min="80" max="1200" step="40" />
               </div>
 
-              <div class="advanced-buttons">
-                <button id="pingBtn" class="btn-secondary">Ping</button>
-                <button id="loadExamplesBtn" class="btn-secondary">Load Examples</button>
+              <div class="adv-actions">
+                <button id="pingBtn" class="sec">Ping</button>
+                <button id="loadExamplesBtn" class="sec">Examples</button>
               </div>
 
-              <div id="examplesPanel" class="examples-panel">
-                <div class="examples-grid">
+              <div id="examplesPanel" class="examples">
+                <div class="eg-grid">
                   <select id="categorySelect"></select>
                   <select id="exampleSelect"></select>
                 </div>
               </div>
 
-              <div class="stats-row">
-                <div class="stat-item">Client ID: <span class="stat-value" id="clientIdEl">-</span></div>
-                <div class="stat-item">Tokens: <span class="stat-value" id="tokensEl">-</span></div>
-                <div class="stat-item">Queue: <span class="stat-value" id="queueEl">-</span></div>
-                <div class="stat-item">Users (1h): <span class="stat-value" id="usersHourEl">-</span></div>
+              <div class="stats">
+                <div>Client: <b id="clientIdEl">-</b></div>
+                <div>Tokens: <b id="tokensEl">-</b></div>
+                <div>Queue: <b id="queueEl">-</b></div>
+                <div>Users(1h): <b id="usersHourEl">-</b></div>
               </div>
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
+
     </div>
   </div>
 
   <script>
     // ============================================================
-    // GUARANTEE: This file will NOT call /predict repeatedly without input.
-    //
-    // /predict is called ONLY by:
-    //   1) textarea "input" event (realtimeEnabled === true)
-    //   2) clicking "Request Prediction" (queue mode)
-    //   3) selecting an example (explicit user action)
-    //
-    // Ping uses /api/status ONLY and never triggers /predict.
-    // No setInterval polling exists.
+    // GUARANTEE:
+    // - No background polling intervals.
+    // - Ping uses /api/status only.
+    // - /predict is called ONLY on explicit user actions:
+    //     (1) typing (input event) when realtimeEnabled
+    //     (2) clicking Request Prediction (queue mode)
+    //     (3) selecting an example
     // ============================================================
 
-    // ---------------------------
-    // VisualViewport keyboard inset
-    // ---------------------------
+    // ---------- Keyboard inset via VisualViewport ----------
     (function setupKeyboardInset(){
       const root = document.documentElement;
-      function updateInset() {
-        if (!window.visualViewport) {
-          root.style.setProperty('--kb-inset', '0px');
-          return;
-        }
+      function update() {
+        if (!window.visualViewport) { root.style.setProperty('--kb','0px'); return; }
         const vv = window.visualViewport;
-        const diff = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-        root.style.setProperty('--kb-inset', diff + 'px');
+        const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        root.style.setProperty('--kb', inset + 'px');
       }
-      updateInset();
-      window.addEventListener('resize', updateInset);
+      update();
+      window.addEventListener('resize', update);
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', updateInset);
-        window.visualViewport.addEventListener('scroll', updateInset);
+        window.visualViewport.addEventListener('resize', update);
+        window.visualViewport.addEventListener('scroll', update);
       }
     })();
 
-    function makeDebounce(fn, getDelayMs) {
-      let t = null;
-      const wrapped = (...args) => {
-        if (t) clearTimeout(t);
-        t = setTimeout(() => fn(...args), getDelayMs());
-      };
-      wrapped.cancel = () => { if (t) clearTimeout(t); t = null; };
-      return wrapped;
+    // ---------- Debounce ----------
+    function makeDebounce(fn, getDelay){
+      let t=null;
+      const w=(...a)=>{ if(t)clearTimeout(t); t=setTimeout(()=>fn(...a), getDelay()); };
+      w.cancel=()=>{ if(t)clearTimeout(t); t=null; };
+      return w;
     }
 
-    // Elements
-    const headerEl = document.getElementById("header");
-    const composerEl = document.getElementById("composer");
+    // ---------- Elements ----------
+    const headerEl = document.getElementById('header');
+    const composerEl = document.getElementById('composer');
 
-    const textEl = document.getElementById("text");
-    const barsEl = document.getElementById("bars");
-    const placeholderEl = document.getElementById("placeholder");
+    const textEl = document.getElementById('text');
+    const barsEl = document.getElementById('bars');
+    const placeholderEl = document.getElementById('placeholder');
 
-    const apiUrlEl = document.getElementById("apiUrl");
-    const metaEl = document.getElementById("meta");
-    const statusText = document.getElementById("statusText");
-    const dot = document.getElementById("dot");
-    const resultsSub = document.getElementById("resultsSub");
+    const apiUrlEl = document.getElementById('apiUrl');
+    const metaEl = document.getElementById('meta');
+    const statusText = document.getElementById('statusText');
+    const dot = document.getElementById('dot');
+    const resultsSub = document.getElementById('resultsSub');
 
-    const pingBtn = document.getElementById("pingBtn");
-    const loadExamplesBtn = document.getElementById("loadExamplesBtn");
-    const examplesPanel = document.getElementById("examplesPanel");
-    const categorySelect = document.getElementById("categorySelect");
-    const exampleSelect = document.getElementById("exampleSelect");
+    const requestBtn = document.getElementById('requestBtn');
+    const queueModeNotice = document.getElementById('queueModeNotice');
 
-    const clientIdEl = document.getElementById("clientIdEl");
-    const tokensEl = document.getElementById("tokensEl");
-    const queueEl = document.getElementById("queueEl");
-    const usersHourEl = document.getElementById("usersHourEl");
+    const advancedToggle = document.getElementById('advancedToggle');
+    const advancedPanel = document.getElementById('advancedPanel');
 
-    const requestBtn = document.getElementById("requestBtn");
-    const queueModeNotice = document.getElementById("queueModeNotice");
+    const debounceDelayEl = document.getElementById('debounceDelay');
+    const pingBtn = document.getElementById('pingBtn');
+    const loadExamplesBtn = document.getElementById('loadExamplesBtn');
 
-    const advancedToggle = document.getElementById("advancedToggle");
-    const advancedPanel = document.getElementById("advancedPanel");
-    const debounceDelayEl = document.getElementById("debounceDelay");
+    const examplesPanel = document.getElementById('examplesPanel');
+    const categorySelect = document.getElementById('categorySelect');
+    const exampleSelect = document.getElementById('exampleSelect');
 
-    // State
-    let pendingRequest = false;
+    const clientIdEl = document.getElementById('clientIdEl');
+    const tokensEl = document.getElementById('tokensEl');
+    const queueEl = document.getElementById('queueEl');
+    const usersHourEl = document.getElementById('usersHourEl');
+
+    // ---------- State ----------
     let advancedVisible = false;
+    let pendingPredict = false;
 
-    // Realtime mode is enabled by default, but can be disabled on 429.
-    // We also update it opportunistically from /api/status responses.
+    // "Realtime" is enabled until we hit 429 or status says no tokens/backlog.
     let realtimeEnabled = true;
 
-    // Connectivity state: ping once, then avoid pings until "wake" events.
+    // Connectivity: ping once; then only on wake/failure/manual
     let isConnected = false;
     let lastGoodAt = 0;
     let lastActivityAt = Date.now();
-    const inactivityMs = 2 * 60 * 1000; // 2 minutes
+    const inactivityMs = 2 * 60 * 1000; // 2min
     let pingInFlight = false;
 
-    function markActivity() { lastActivityAt = Date.now(); }
-
-    // Debounce delay
-    let debounceDelay = 150;
-    const savedDelay = localStorage.getItem('qea_debounce_delay');
-    if (savedDelay) {
-      const n = parseInt(savedDelay, 10);
-      if (Number.isFinite(n)) debounceDelay = n;
+    // ---------- Measurements to prevent overlap ----------
+    function updateMeasures(){
+      const root = document.documentElement;
+      const hh = headerEl ? headerEl.getBoundingClientRect().height : 64;
+      const ch = composerEl ? composerEl.getBoundingClientRect().height : 128;
+      root.style.setProperty('--hh', Math.ceil(hh) + 'px');
+      root.style.setProperty('--ch', Math.ceil(ch) + 'px');
     }
-    debounceDelayEl.value = debounceDelay;
+    updateMeasures();
+    window.addEventListener('resize', updateMeasures);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', updateMeasures);
 
-    debounceDelayEl.addEventListener('input', (e) => {
-      const value = parseInt(e.target.value, 10);
-      if (value >= 50 && value <= 1000) {
-        debounceDelay = value;
-        localStorage.setItem('qea_debounce_delay', String(value));
-      }
-    });
-
-    // Advanced toggle
-    advancedToggle.addEventListener('click', () => {
-      advancedVisible = !advancedVisible;
-      advancedToggle.classList.toggle('expanded', advancedVisible);
-      advancedPanel.classList.toggle('visible', advancedVisible);
-      setTimeout(updateShellMeasurements, 0);
-    });
-
-    function setStatus(ok, msg) {
+    // ---------- Status ----------
+    function setStatus(ok,msg){
       statusText.textContent = msg;
-      dot.className = "status-dot " + (ok ? "ok" : "bad");
+      dot.className = 'dot ' + (ok ? 'ok' : 'bad');
     }
 
-    // Client id
+    function markActivity(){ lastActivityAt = Date.now(); }
+
+    // ---------- Client ID ----------
     let clientId = localStorage.getItem('qea_client_id');
     if (!clientId) {
-      if (window.crypto && crypto.randomUUID) clientId = crypto.randomUUID();
-      else clientId = 'c-' + Math.random().toString(36).slice(2, 12);
+      clientId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('c-' + Math.random().toString(36).slice(2,12));
       localStorage.setItem('qea_client_id', clientId);
     }
-    clientIdEl.textContent = clientId.substring(0, 8) + '...';
+    clientIdEl.textContent = clientId.slice(0,8) + '…';
 
-    // Measure header and composer so mobile panes never overlap
-    function updateShellMeasurements() {
-      const root = document.documentElement;
-
-      const headerH = headerEl ? headerEl.getBoundingClientRect().height : 120;
-      root.style.setProperty('--header-h', Math.ceil(headerH) + 'px');
-
-      const composerH = composerEl ? composerEl.getBoundingClientRect().height : 240;
-      root.style.setProperty('--composer-h', Math.ceil(composerH) + 'px');
-    }
-
-    // call often on layout-affecting events
-    updateShellMeasurements();
-    window.addEventListener('resize', updateShellMeasurements);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateShellMeasurements);
-    }
-
-    // Input lock (queue mode)
-    function setInputLocked(locked, reason) {
+    // ---------- Input lock in queue mode ----------
+    function setInputLocked(locked, reason){
       textEl.readOnly = locked;
       textEl.classList.toggle('locked', locked);
-
       if (locked && reason) {
         textEl.setAttribute('aria-busy', 'true');
         textEl.setAttribute('aria-label', `Input locked: ${reason}`);
@@ -770,145 +634,46 @@
         textEl.removeAttribute('aria-label');
       }
     }
-
-    // Harden readonly
-    textEl.addEventListener('beforeinput', (e) => {
-      if (textEl.readOnly) e.preventDefault();
-    });
-    textEl.addEventListener('keydown', (e) => {
+    textEl.addEventListener('beforeinput', (e)=>{ if (textEl.readOnly) e.preventDefault(); });
+    textEl.addEventListener('keydown', (e)=>{
       if (!textEl.readOnly) return;
-      const block = (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete" || e.key === "Enter");
+      const block = (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter');
       if (block) e.preventDefault();
     });
 
-    // Fetch helper
-    async function fetchJsonWithRetry(url, opts = {}, retries = 1, backoff = 200) {
-      let lastErr = null;
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
+    // ---------- Fetch helper ----------
+    async function fetchJsonWithRetry(url, opts={}, retries=1, backoff=200){
+      let last=null;
+      for (let i=0;i<=retries;i++){
+        try{
           const res = await fetch(url, opts);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const ct = res.headers.get('content-type') || '';
           if (!ct.includes('application/json')) {
             const txt = await res.text();
-            throw new Error('non-json:' + txt.slice(0, 200));
+            throw new Error('non-json:' + txt.slice(0,200));
           }
           return await res.json();
-        } catch (e) {
-          lastErr = e;
-          if (attempt < retries) await new Promise(r => setTimeout(r, backoff * (attempt + 1)));
+        } catch(e){
+          last=e;
+          if (i<retries) await new Promise(r=>setTimeout(r, backoff*(i+1)));
         }
       }
-      throw lastErr;
+      throw last;
     }
 
-    function baseUrl() {
+    function baseUrl(){
       const api = apiUrlEl.value.trim();
-      return api.replace(/\/predict\/?$/i, "").replace(/\/$/, "");
+      return api.replace(/\/predict\/?$/i,'').replace(/\/$/,'');
     }
 
-    // ---------------------------
-    // Ping (/api/status) once, then only on "wake" events / failures / manual ping.
-    // Does NOT call /predict. Does NOT schedule polling.
-    // ---------------------------
-    async function pingConnectivityIfNeeded(force = false) {
-      if (!force && isConnected) return true;
-      if (pingInFlight) return false;
-      pingInFlight = true;
+    // ---------- Rate-mode UI ----------
+    function applyRateModeFrom(tokens, queueLen){
+      const t = parseInt(tokens,10);
+      const q = parseInt(queueLen,10);
+      const shouldRealtime = (Number.isFinite(t) ? t : 0) > 0 && (Number.isFinite(q) ? q : 0) === 0;
 
-      const url = baseUrl() + "/api/status";
-      const t0 = performance.now();
-
-      try {
-        const data = await fetchJsonWithRetry(url, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
-          body: clientId
-        }, 1, 200);
-
-        const dt = Math.round(performance.now() - t0);
-
-        isConnected = true;
-        lastGoodAt = Date.now();
-
-        setStatus(true, `Connected (${dt}ms)`);
-        metaEl.textContent = `Status OK • ${dt}ms`;
-        resultsSub.textContent = `${dt}ms • status`;
-
-        // opportunistic stats (no polling)
-        tokensEl.textContent = data.tokens;
-        queueEl.textContent = data.queue_len;
-        usersHourEl.textContent = data.users_past_hour;
-
-        // Update realtime vs queue mode based on returned tokens/queue
-        applyRateModeFromStatus(data.tokens, data.queue_len);
-
-        setTimeout(updateShellMeasurements, 0);
-        return true;
-      } catch (e) {
-        isConnected = false;
-        setStatus(false, "Disconnected");
-        metaEl.textContent = `Ping failed: ${String(e).slice(0, 120)}`;
-        resultsSub.textContent = `offline`;
-
-        // Offer manual reconnect without any background work
-        requestBtn.style.display = 'block';
-        requestBtn.textContent = 'Reconnect';
-        queueModeNotice.style.display = 'none';
-        setInputLocked(false);
-
-        setTimeout(updateShellMeasurements, 0);
-        return false;
-      } finally {
-        pingInFlight = false;
-      }
-    }
-
-    function maybePingOnWake() {
-      const now = Date.now();
-      const inactiveFor = now - lastActivityAt;
-      const staleFor = now - lastGoodAt;
-
-      const shouldPing = !isConnected || inactiveFor > inactivityMs || staleFor > 10 * 60 * 1000;
-      if (shouldPing) pingConnectivityIfNeeded(true);
-    }
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') maybePingOnWake();
-    });
-
-    window.addEventListener('offline', () => {
-      isConnected = false;
-      setStatus(false, "Offline");
-      resultsSub.textContent = "offline";
-    });
-
-    window.addEventListener('online', () => {
-      pingConnectivityIfNeeded(true);
-    });
-
-    ['pointerdown','keydown','touchstart','focus'].forEach(evt => {
-      window.addEventListener(evt, markActivity, { passive: true });
-    });
-
-    pingBtn.addEventListener("click", async () => {
-      await pingConnectivityIfNeeded(true);
-    });
-
-    // If API URL changes, reset connectivity and allow a fresh ping (still not polling)
-    apiUrlEl.addEventListener('change', () => {
-      isConnected = false;
-      pingConnectivityIfNeeded(true);
-    });
-
-    // ---------------------------
-    // Rate-mode UI (realtime vs queue)
-    // ---------------------------
-    function applyRateModeFromStatus(tokens, queueLen) {
-      // Realtime enabled only when tokens available and no backlog
-      const shouldEnable = (parseInt(tokens, 10) > 0) && (parseInt(queueLen, 10) === 0);
-
-      realtimeEnabled = shouldEnable;
+      realtimeEnabled = shouldRealtime;
 
       if (realtimeEnabled) {
         requestBtn.style.display = 'none';
@@ -918,349 +683,401 @@
         requestBtn.style.display = 'block';
         requestBtn.textContent = 'Request Prediction';
         queueModeNotice.style.display = 'block';
-        setInputLocked(true, "waiting in queue");
+        setInputLocked(true, 'waiting in queue');
+      }
+      setTimeout(updateMeasures, 0);
+    }
+
+    // ---------- Ping: /api/status only ----------
+    async function pingIfNeeded(force=false){
+      if (!force && isConnected) return true;
+      if (pingInFlight) return false;
+      pingInFlight = true;
+
+      const url = baseUrl() + '/api/status';
+      const t0 = performance.now();
+
+      try{
+        const data = await fetchJsonWithRetry(url, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain', 'Accept':'application/json' },
+          body: clientId
+        }, 1, 200);
+
+        const dt = Math.round(performance.now()-t0);
+
+        isConnected = true;
+        lastGoodAt = Date.now();
+
+        setStatus(true, `Connected (${dt}ms)`);
+        metaEl.textContent = `Status OK • ${dt}ms`;
+        resultsSub.textContent = `${dt}ms`;
+
+        tokensEl.textContent = data.tokens;
+        queueEl.textContent = data.queue_len;
+        usersHourEl.textContent = data.users_past_hour;
+
+        applyRateModeFrom(data.tokens, data.queue_len);
+        setTimeout(updateMeasures, 0);
+        return true;
+      } catch(e){
+        isConnected = false;
+        setStatus(false, 'Disconnected');
+        metaEl.textContent = `Ping failed: ${String(e).slice(0,120)}`;
+        resultsSub.textContent = 'offline';
+
+        // Offer reconnect button
+        requestBtn.style.display = 'block';
+        requestBtn.textContent = 'Reconnect';
+        queueModeNotice.style.display = 'none';
+        setInputLocked(false);
+
+        setTimeout(updateMeasures, 0);
+        return false;
+      } finally {
+        pingInFlight = false;
       }
     }
 
-    // ---------------------------
-    // Bars: keyed DOM + FLIP reorder + numeric interpolation
-    // Mobile uses condensed card rows; Desktop uses columns.
-    // ---------------------------
+    function maybePingOnWake(){
+      const now = Date.now();
+      const inactive = now - lastActivityAt;
+      const stale = now - lastGoodAt;
+      if (!isConnected || inactive > inactivityMs || stale > 10*60*1000) pingIfNeeded(true);
+    }
+
+    document.addEventListener('visibilitychange', ()=>{
+      if (document.visibilityState === 'visible') maybePingOnWake();
+    });
+    window.addEventListener('offline', ()=>{
+      isConnected = false;
+      setStatus(false,'Offline');
+      resultsSub.textContent='offline';
+    });
+    window.addEventListener('online', ()=>{ pingIfNeeded(true); });
+
+    ['pointerdown','keydown','touchstart','focus'].forEach(evt=>{
+      window.addEventListener(evt, markActivity, {passive:true});
+    });
+
+    pingBtn.addEventListener('click', async ()=>{
+      markActivity();
+      await pingIfNeeded(true);
+    });
+
+    apiUrlEl.addEventListener('change', ()=>{
+      isConnected = false;
+      pingIfNeeded(true);
+    });
+
+    // ---------- Bars rendering (compact, readable) ----------
     const rowByLabel = new Map();
-    let hasRenderedOnce = false;
+    let renderedOnce = false;
 
-    function isMobile() { return window.matchMedia('(max-width: 899px)').matches; }
-    function formatPct(v) { return v.toFixed(1) + "%"; }
+    function fmtPct(v){ return v.toFixed(1) + '%'; }
 
-    function tweenNumber(el, from, to, durationMs) {
+    function tweenPct(el, from, to, ms){
       if (!Number.isFinite(from)) from = 0;
       if (!Number.isFinite(to)) to = 0;
       const start = performance.now();
-      const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+      const ease = t => t<.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
 
-      function step(now) {
-        const t = Math.min(1, (now - start) / durationMs);
-        const v = from + (to - from) * ease(t);
-        el.textContent = formatPct(v);
-        if (t < 1) requestAnimationFrame(step);
-        else el.textContent = formatPct(to);
+      function step(now){
+        const t = Math.min(1, (now-start)/ms);
+        const v = from + (to-from)*ease(t);
+        el.textContent = fmtPct(v);
+        if (t<1) requestAnimationFrame(step);
+        else el.textContent = fmtPct(to);
       }
       requestAnimationFrame(step);
     }
 
-    function measurePositions() {
-      const positions = new Map();
-      for (const [label, obj] of rowByLabel.entries()) {
-        if (obj.row.isConnected) positions.set(label, obj.row.getBoundingClientRect());
-      }
-      return positions;
-    }
-
-    function applyFLIP(before) {
-      const after = measurePositions();
-      for (const [label, beforeRect] of before.entries()) {
-        const obj = rowByLabel.get(label);
-        if (!obj || !obj.row.isConnected) continue;
-        const afterRect = after.get(label);
-        if (!afterRect) continue;
-
-        const dx = beforeRect.left - afterRect.left;
-        const dy = beforeRect.top - afterRect.top;
-        if (dx || dy) {
-          obj.row.style.transform = `translate(${dx}px, ${dy}px)`;
-          obj.row.style.transition = 'transform 0ms';
-          requestAnimationFrame(() => {
-            obj.row.style.transition = `transform var(--dur-med) var(--ease-inout)`;
-            obj.row.style.transform = 'translate(0, 0)';
-          });
-        }
-      }
-    }
-
-    function ensureRow(label) {
+    function ensureRow(label){
       let obj = rowByLabel.get(label);
       if (obj && obj.row.isConnected) return obj;
 
-      const row = document.createElement("div");
-      row.className = "bar-row " + (hasRenderedOnce ? "" : "enter");
+      const row = document.createElement('div');
+      row.className = 'row';
 
-      // top line: label + pct (mobile shows as flex, desktop uses contents)
-      const top = document.createElement("div");
-      top.className = "bar-top";
+      const top = document.createElement('div');
+      top.className = 'row-top';
 
-      const labelEl = document.createElement("div");
-      labelEl.className = "bar-label";
+      const labelEl = document.createElement('div');
+      labelEl.className = 'label';
       labelEl.textContent = label;
 
-      const pctEl = document.createElement("div");
-      pctEl.className = "bar-pct";
-      pctEl.textContent = "0.0%";
+      const pctEl = document.createElement('div');
+      pctEl.className = 'pct';
+      pctEl.textContent = '0.0%';
 
       top.appendChild(labelEl);
       top.appendChild(pctEl);
 
-      const track = document.createElement("div");
-      track.className = "bar-track";
+      const track = document.createElement('div');
+      track.className = 'track';
 
-      const fill = document.createElement("div");
-      fill.className = "bar-fill";
-      fill.style.width = "0%";
+      const fill = document.createElement('div');
+      fill.className = 'fill';
+      fill.style.width = '0%';
+
       track.appendChild(fill);
-
       row.appendChild(top);
       row.appendChild(track);
 
-      obj = { row, labelEl, fillEl: fill, pctEl, lastPct: 0 };
+      obj = { row, fill, pctEl, last: 0 };
       rowByLabel.set(label, obj);
       return obj;
     }
 
-    function renderBars(predictions, metaText) {
-      let entries = Object.entries(predictions || {}).sort((a,b) => b[1] - a[1]);
+    function render(preds, metaText){
+      let entries = Object.entries(preds || {}).sort((a,b)=>b[1]-a[1]);
 
-      // Keep mobile stable/readable: cap to top 6
-      if (isMobile()) entries = entries.slice(0, 6);
+      // Mobile-first compactness: show top 5 only. Desktop still ok (bars are small).
+      entries = entries.slice(0, 5);
 
-      const hasData = entries.length > 0;
-      if (placeholderEl) placeholderEl.style.display = hasData ? "none" : "block";
+      if (!entries.length) {
+        barsEl.innerHTML = '';
+        barsEl.appendChild(placeholderEl);
+        placeholderEl.style.display = 'block';
+        resultsSub.textContent = metaText || '—';
+        return;
+      }
 
-      const before = measurePositions();
-      const nextLabels = new Set(entries.map(([k]) => k));
+      placeholderEl.style.display = 'none';
+
+      // Rebuild to keep it deterministic and compact (5 cards only)
+      barsEl.innerHTML = '';
 
       for (const [label, pct] of entries) {
         const obj = ensureRow(label);
         barsEl.appendChild(obj.row);
 
         const w = Math.max(0, Math.min(100, Number(pct) || 0));
-        obj.fillEl.style.width = w + "%";
-
-        const from = obj.lastPct;
-        obj.lastPct = w;
-        tweenNumber(obj.pctEl, from, w, 520);
+        obj.fill.style.width = w + '%';
+        tweenPct(obj.pctEl, obj.last, w, 520);
+        obj.last = w;
       }
 
-      for (const [label, obj] of rowByLabel.entries()) {
-        if (!nextLabels.has(label) && obj.row.isConnected) {
-          obj.row.classList.add('exit');
-          requestAnimationFrame(() => {
-            obj.row.classList.add('final');
-            setTimeout(() => { if (obj.row.isConnected) obj.row.remove(); }, 220);
-          });
-        }
-      }
-
-      if (hasRenderedOnce) applyFLIP(before);
-      hasRenderedOnce = true;
-
-      if (metaText) resultsSub.textContent = metaText;
-      setTimeout(updateShellMeasurements, 0);
+      resultsSub.textContent = metaText || '—';
+      renderedOnce = true;
+      setTimeout(updateMeasures, 0);
     }
 
-    // ---------------------------
-    // Predict
-    // ---------------------------
-    async function predictNow() {
-      if (pendingRequest) return;
+    // ---------- Predict ----------
+    async function predictNow(){
+      if (pendingPredict) return;
 
-      const apiUrl = apiUrlEl.value.trim();
       const text = textEl.value.trim();
+      const apiUrl = apiUrlEl.value.trim();
 
       if (!text) {
-        renderBars({}, "");
-        metaEl.textContent = "";
+        render({}, '—');
+        metaEl.textContent = '';
         return;
       }
 
-      pendingRequest = true;
+      pendingPredict = true;
       requestBtn.disabled = true;
 
-      // If in queue mode, lock edits while waiting for server response
       if (!realtimeEnabled) {
-        setInputLocked(true, "waiting in queue");
-        setStatus(false, "Waiting in queue...");
-        requestBtn.textContent = "Processing...";
+        setInputLocked(true, 'waiting in queue');
+        setStatus(false, 'Waiting in queue…');
+        requestBtn.textContent = 'Processing…';
       }
 
       const t0 = performance.now();
 
-      try {
+      try{
         const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "x-client-id": clientId
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'Accept':'application/json',
+            'x-client-id': clientId
           },
           body: JSON.stringify({ text })
         });
 
         if (!res.ok) {
-          // if backend says rate limited, switch to queue mode
-          let errorMsg = `HTTP ${res.status}`;
+          let msg = `HTTP ${res.status}`;
           try {
             const ct = res.headers.get('content-type') || '';
             if (ct.includes('application/json')) {
-              const errData = await res.json();
-              if (errData?.detail) errorMsg = errData.detail;
+              const j = await res.json();
+              if (j?.detail) msg = j.detail;
             }
           } catch {}
 
           if (res.status === 429) {
             realtimeEnabled = false;
-            setStatus(false, "Rate limited");
-            metaEl.textContent = `Rate limit: ${errorMsg}`;
-            queueModeNotice.style.display = 'block';
+            setStatus(false, 'Rate limited');
+            metaEl.textContent = msg;
             requestBtn.style.display = 'block';
             requestBtn.textContent = 'Request Prediction';
-            setInputLocked(true, "waiting in queue");
+            queueModeNotice.style.display = 'block';
+            setInputLocked(true, 'waiting in queue');
           } else if (res.status === 413) {
-            setStatus(false, "Request too long");
-            metaEl.textContent = errorMsg;
+            setStatus(false, 'Too long');
+            metaEl.textContent = msg;
           } else {
-            setStatus(false, `Error ${res.status}`);
-            metaEl.textContent = errorMsg;
+            setStatus(false, 'Error');
+            metaEl.textContent = msg;
           }
 
-          // Treat failures as potential connectivity issue; allow a wake ping next time
-          isConnected = false;
+          isConnected = false; // allow wake ping later
           return;
         }
 
         const ct = res.headers.get('content-type') || '';
         if (!ct.includes('application/json')) {
           const txt = await res.text();
-          throw new Error('non-json:' + txt.slice(0, 200));
+          throw new Error('non-json:' + txt.slice(0,200));
         }
 
         const data = await res.json();
         const dt = Math.round(performance.now() - t0);
 
-        // Successful predict implies connected
         isConnected = true;
         lastGoodAt = Date.now();
 
-        setStatus(true, `Connected (${dt}ms)`);
-        metaEl.textContent = `Device: ${data.device ?? "unknown"} • ${dt}ms`;
-        renderBars(data.predictions || {}, `${dt}ms • ${data.device ?? "unknown"}`);
+        setStatus(true, `OK (${dt}ms)`);
+        metaEl.textContent = `Device: ${data.device ?? 'unknown'} • ${dt}ms`;
 
-        // Optional, opportunistic status refresh AFTER a prediction only (not polling)
-        // This does not trigger /predict.
-        pingConnectivityIfNeeded(true);
+        render(data.predictions || {}, `${dt}ms`);
 
-      } catch (e) {
-        setStatus(false, "Error");
-        metaEl.textContent = String(e).slice(0, 200);
-        isConnected = false; // next wake interaction can ping status
-        console.error(e);
+        // Optional one-shot status sync AFTER successful predict (no polling)
+        pingIfNeeded(true);
+
+      } catch(e){
+        setStatus(false, 'Error');
+        metaEl.textContent = String(e).slice(0,180);
+        isConnected = false;
       } finally {
-        pendingRequest = false;
+        pendingPredict = false;
         requestBtn.disabled = false;
 
-        if (!realtimeEnabled) {
-          requestBtn.textContent = "Request Prediction";
-          setInputLocked(true, "waiting in queue");
+        if (requestBtn.textContent === 'Reconnect') {
+          // leave as-is
+        } else if (!realtimeEnabled) {
+          requestBtn.textContent = 'Request Prediction';
+          setInputLocked(true, 'waiting in queue');
         } else {
-          requestBtn.textContent = "Request Prediction";
+          requestBtn.textContent = 'Request Prediction';
           setInputLocked(false);
         }
       }
     }
 
-    const predictDebounced = makeDebounce(predictNow, () => debounceDelay);
+    // Debounce config
+    let debounceDelay = 200;
+    const saved = localStorage.getItem('qea_debounce_delay');
+    if (saved) {
+      const n = parseInt(saved,10);
+      if (Number.isFinite(n)) debounceDelay = n;
+    }
+    debounceDelayEl.value = debounceDelay;
 
-    // Predict triggers ONLY on user input (realtime mode)
-    textEl.addEventListener("input", () => {
-      markActivity();
-      maybePingOnWake(); // ping status only if stale/offline; never calls /predict
-      if (realtimeEnabled && !pendingRequest) predictDebounced();
+    debounceDelayEl.addEventListener('input', (e)=>{
+      const v = parseInt(e.target.value,10);
+      if (v>=80 && v<=1200) {
+        debounceDelay = v;
+        localStorage.setItem('qea_debounce_delay', String(v));
+      }
     });
 
-    // In queue mode / offline reconnect, button is explicit user action
-    requestBtn.addEventListener("click", async () => {
+    const predictDebounced = makeDebounce(predictNow, ()=>debounceDelay);
+
+    // Predict only on user typing when realtime enabled
+    textEl.addEventListener('input', ()=>{
+      markActivity();
+      maybePingOnWake(); // ping only if stale/offline; never calls /predict
+      if (realtimeEnabled && !pendingPredict) predictDebounced();
+    });
+
+    // Button for queue mode OR reconnect (explicit user action)
+    requestBtn.addEventListener('click', async ()=>{
       markActivity();
       if (requestBtn.textContent === 'Reconnect') {
-        await pingConnectivityIfNeeded(true);
+        await pingIfNeeded(true);
         return;
       }
       await predictNow();
     });
 
-    // ---------------------------
-    // Examples (explicit user action)
-    // ---------------------------
-    function populateExamplesFor(category, data) {
-      const arr = data[category] || [];
-      exampleSelect.innerHTML = "";
-      for (const ex of arr) {
+    // ---------- Advanced / examples ----------
+    advancedToggle.addEventListener('click', ()=>{
+      advancedVisible = !advancedVisible;
+      advancedToggle.classList.toggle('expanded', advancedVisible);
+      advancedPanel.classList.toggle('visible', advancedVisible);
+      setTimeout(updateMeasures, 0);
+    });
+
+    async function loadExamples(){
+      const url = baseUrl() + '/api/examples';
+      const data = await fetchJsonWithRetry(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain', 'Accept':'application/json' },
+        body: clientId
+      }, 2, 250);
+
+      categorySelect.innerHTML = '';
+      for (const k of Object.keys(data)) {
         const o = document.createElement('option');
-        o.value = ex;
-        o.textContent = ex.length > 80 ? ex.slice(0, 80) + '...' : ex;
-        exampleSelect.appendChild(o);
+        o.value = k; o.textContent = k;
+        categorySelect.appendChild(o);
       }
+
+      function fillCategory(cat){
+        const arr = data[cat] || [];
+        exampleSelect.innerHTML = '';
+        for (const ex of arr) {
+          const o = document.createElement('option');
+          o.value = ex;
+          o.textContent = ex.length > 72 ? ex.slice(0,72) + '…' : ex;
+          exampleSelect.appendChild(o);
+        }
+      }
+
+      if (categorySelect.options.length) {
+        categorySelect.selectedIndex = 0;
+        fillCategory(categorySelect.value);
+      }
+
+      examplesPanel.classList.add('visible');
+      examplesPanel.classList.toggle('visible', true);
+      examplesPanel.style.display = 'block';
+      setStatus(true, 'Examples loaded');
+      setTimeout(updateMeasures, 0);
+
+      categorySelect.onchange = () => { fillCategory(categorySelect.value); setTimeout(updateMeasures,0); };
     }
 
-    async function loadExamples() {
-      const url = baseUrl() + "/api/examples";
-      try {
-        const data = await fetchJsonWithRetry(url, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
-          body: clientId
-        }, 2, 250);
-
-        categorySelect.innerHTML = "";
-        for (const k of Object.keys(data)) {
-          const opt = document.createElement('option');
-          opt.value = k;
-          opt.textContent = k;
-          categorySelect.appendChild(opt);
-        }
-
-        if (categorySelect.options.length > 0) {
-          categorySelect.selectedIndex = 0;
-          populateExamplesFor(categorySelect.value, data);
-        }
-
-        examplesPanel.classList.add('visible');
-        setStatus(true, "Examples loaded");
-        setTimeout(updateShellMeasurements, 0);
-      } catch (e) {
-        setStatus(false, "Examples load failed");
-        metaEl.textContent = String(e).slice(0, 200);
+    loadExamplesBtn.addEventListener('click', async ()=>{
+      markActivity();
+      maybePingOnWake();
+      try{
+        await loadExamples();
+      } catch(e){
+        setStatus(false,'Examples failed');
+        metaEl.textContent = String(e).slice(0,160);
       }
-    }
-
-    loadExamplesBtn.addEventListener('click', async () => {
-      markActivity();
-      maybePingOnWake();
-      await loadExamples();
     });
 
-    categorySelect.addEventListener('change', async () => {
-      markActivity();
-      maybePingOnWake();
-      // reload examples data once (still explicit interaction)
-      await loadExamples();
-    });
-
-    exampleSelect.addEventListener('change', () => {
+    exampleSelect.addEventListener('change', ()=>{
       markActivity();
       maybePingOnWake();
       const v = exampleSelect.value || '';
-      if (v) {
-        textEl.value = v;
-        // This is explicit user action -> OK to run predict once.
-        if (realtimeEnabled && !pendingRequest) predictDebounced();
-        else predictNow();
-      }
+      if (!v) return;
+      textEl.value = v;
+      // Explicit user action: OK to predict once
+      if (realtimeEnabled && !pendingPredict) predictDebounced();
+      else predictNow();
     });
 
-    // ---------------------------
-    // INIT: one-shot ping on load, then no polling.
-    // ---------------------------
-    setStatus(false, "Connecting...");
-    pingConnectivityIfNeeded(true); // uses /api/status only
-    updateShellMeasurements();
+    // ---------- Init: one-shot ping ----------
+    setStatus(false,'Connecting…');
+    pingIfNeeded(true);
+    updateMeasures();
   </script>
 </body>
 </html>
