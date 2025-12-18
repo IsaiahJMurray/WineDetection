@@ -73,6 +73,17 @@
       animation: fadeInDown 0.6s ease-out;
     }
 
+    textarea[readonly].locked {
+    opacity: 0.75;
+    cursor: not-allowed;
+    }
+
+    textarea[readonly].locked:focus {
+    border-color: var(--border);
+    box-shadow: none;
+    }
+
+
     .header h1 {
       font-size: 36px;
       font-weight: 700;
@@ -696,6 +707,21 @@
       requestAnimationFrame(step);
     }
 
+    function setInputLocked(locked, reason) {
+        // readonly prevents edits but still allows scrolling/copy/select
+        textEl.readOnly = locked;
+        textEl.classList.toggle('locked', locked);
+
+        // Optional: make it very explicit to the user
+        if (locked && reason) {
+            textEl.setAttribute('aria-busy', 'true');
+            textEl.setAttribute('aria-label', `Input locked: ${reason}`);
+        } else {
+            textEl.removeAttribute('aria-busy');
+            textEl.removeAttribute('aria-label');
+        }
+    }
+
     function measurePositions() {
       const positions = new Map();
       for (const [label, obj] of rowByLabel.entries()) {
@@ -841,6 +867,9 @@
 
       pendingRequest = true;
       requestBtn.disabled = true;
+      setInputLocked(!realtimeEnabled, "waiting in queue");
+
+
       if (!realtimeEnabled) {
         setStatus(false, "Waiting in queue...");
         requestBtn.textContent = "Processing...";
@@ -904,6 +933,7 @@
         pendingRequest = false;
         requestBtn.disabled = false;
         requestBtn.textContent = "Request Prediction";
+        setInputLocked(!realtimeEnabled, realtimeEnabled ? "" : "waiting in queue");
       }
     }
 
@@ -1014,12 +1044,14 @@
         if (realtimeEnabled) {
           requestBtn.style.display = 'none';
           queueModeNotice.style.display = 'none';
+          setInputLocked(false);
           predictDebounced.cancel();
           if (textEl.value.trim() && !pendingRequest) predictDebounced();
         } else {
           predictDebounced.cancel();
           requestBtn.style.display = 'block';
           queueModeNotice.style.display = 'block';
+          setInputLocked(true, "waiting in queue");
         }
       }
     }
