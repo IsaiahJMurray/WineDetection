@@ -45,6 +45,8 @@ class _ClientState:
         self.tokens = RATE_LIMIT_TOKENS
         self.last_refill = time.time()
         self.queue = asyncio.Queue(maxsize=PER_IP_QUEUE_SIZE)
+        self.processor_running = False  # Flag to prevent multiple queue processors
+        self.lock = asyncio.Lock()  # Lock for token operations
 
 
 clients: Dict[str, _ClientState] = {}
@@ -52,6 +54,7 @@ last_seen: Dict[str, float] = {}
 
 
 def _refill_tokens(state: _ClientState):
+    """Refill tokens based on elapsed time. Thread-safe when called with lock."""
     now = time.time()
     elapsed = now - state.last_refill
     if elapsed <= 0:
@@ -63,20 +66,87 @@ def _refill_tokens(state: _ClientState):
         state.last_refill += add * RATE_REFILL_SECONDS
 
 
-async def _process_queue_for_client(state: _ClientState):
-    # run forever as long as items exist — called per-request when needed
-    while not state.queue.empty():
-        item = await state.queue.get()
-        fut, inp_text = item
+async def _wait_for_token(state: _ClientState):
+    """Wait until at least one token is available. Returns True when token is available."""
+    while True:
+        async with state.lock:
+            _refill_tokens(state)
+            if state.tokens > 0:
+                return True
+        
+        # No tokens available, wait for next refill
+        await asyncio.sleep(RATE_REFILL_SECONDS)
+
+
+async def _process_queue_for_client(state: _ClientState, client_id: str):
+    """Continuously process queue items for a client, respecting rate limits.
+    
+    This function runs as a background task and processes items from the queue
+    one at a time, waiting for tokens to become available before processing each item.
+    """
+    consecutive_empty_checks = 0
+    MAX_EMPTY_CHECKS = 3  # Exit after 3 consecutive empty checks (3 seconds)
+    
+    while True:
         try:
-            # run inference in threadpool to avoid blocking
-            loop = asyncio.get_running_loop()
-            res = await loop.run_in_executor(executor, _sync_model_predict, inp_text)
-            fut.set_result(res)
+            # Wait for an item in the queue (with timeout to allow checking if we should exit)
+            try:
+                item = await asyncio.wait_for(state.queue.get(), timeout=1.0)
+                consecutive_empty_checks = 0  # Reset counter when we get an item
+            except asyncio.TimeoutError:
+                # Check if queue is empty and we should stop
+                if state.queue.empty():
+                    consecutive_empty_checks += 1
+                    if consecutive_empty_checks >= MAX_EMPTY_CHECKS:
+                        # Queue has been empty for a while, exit processor
+                        async with state.lock:
+                            # Double-check queue is still empty before exiting
+                            if state.queue.empty():
+                                state.processor_running = False
+                                return
+                        consecutive_empty_checks = 0  # Reset if queue got items
+                continue
+            
+            fut, inp_text = item
+            
+            # Wait for a token to be available before processing
+            await _wait_for_token(state)
+            
+            # Consume token and process
+            token_consumed = False
+            async with state.lock:
+                _refill_tokens(state)  # Refill one more time before consuming
+                if state.tokens <= 0:
+                    # This shouldn't happen after _wait_for_token, but handle gracefully
+                    token_consumed = False
+                else:
+                    state.tokens -= 1
+                    token_consumed = True
+            
+            if not token_consumed:
+                # Rare edge case - put item back and retry
+                await asyncio.sleep(0.5)
+                await state.queue.put((fut, inp_text))
+                state.queue.task_done()  # Mark current get() as done since we're putting it back
+                continue
+            
+            # Run inference in threadpool to avoid blocking event loop
+            try:
+                loop = asyncio.get_running_loop()
+                res = await loop.run_in_executor(executor, _sync_model_predict, inp_text)
+                fut.set_result(res)
+            except Exception as e:
+                fut.set_exception(e)
+            finally:
+                state.queue.task_done()
+                
         except Exception as e:
-            fut.set_exception(e)
-        finally:
-            state.queue.task_done()
+            # Log error but continue processing
+            print(f"Error in queue processor for {client_id}: {e}")
+            if 'fut' in locals() and not fut.done():
+                fut.set_exception(e)
+            if 'item' in locals():
+                state.queue.task_done()
 
 
 def _sync_model_predict(text: str):
@@ -138,13 +208,16 @@ async def predict(request: Request, inp: PredictIn):
     # update last seen for "users in past hour" metric
     last_seen[client_id] = time.time()
 
-    # Refill tokens
-    _refill_tokens(state)
+    # Check for available tokens with lock and consume if available
+    has_token = False
+    async with state.lock:
+        _refill_tokens(state)
+        if state.tokens > 0:
+            state.tokens -= 1
+            has_token = True
 
-    # If token available -> consume and run immediately
-    if state.tokens > 0:
-        state.tokens -= 1
-        # Run model in threadpool so we don't block event loop
+    # If we have a token, process immediately
+    if has_token:
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(executor, _sync_model_predict, inp.text)
         return res
@@ -154,11 +227,12 @@ async def predict(request: Request, inp: PredictIn):
     try:
         state.queue.put_nowait((fut, inp.text))
     except asyncio.QueueFull:
-        raise HTTPException(status_code=429, detail="Rate limit exceeded; please retry later")
+        raise HTTPException(status_code=429, detail="Rate limit exceeded; queue full. Please retry later.")
 
-    # Start background processing for this client's queue if not already running
-    # We schedule a task to drain the queue — it will process until empty
-    asyncio.create_task(_process_queue_for_client(state))
+    # Start background queue processor if not already running
+    if not state.processor_running:
+        state.processor_running = True
+        asyncio.create_task(_process_queue_for_client(state, client_id))
 
     # Wait for the queued inference to complete and return its result
     try:
@@ -169,7 +243,7 @@ async def predict(request: Request, inp: PredictIn):
 
 
 @app.get("/api/status")
-def client_status(request: Request):
+async def client_status(request: Request):
     """Return the client's token budget, queue length, and number of unique users in the past hour.
 
     Header: `x-client-id` is required to identify the device client.
@@ -184,8 +258,9 @@ def client_status(request: Request):
         tokens = RATE_LIMIT_TOKENS
         queue_len = 0
     else:
-        _refill_tokens(state)
-        tokens = state.tokens
+        async with state.lock:
+            _refill_tokens(state)
+            tokens = state.tokens
         queue_len = state.queue.qsize()
 
     # count unique users seen in the past hour
@@ -270,8 +345,9 @@ async def client_status_post(request: Request):
         tokens = RATE_LIMIT_TOKENS
         queue_len = 0
     else:
-        _refill_tokens(state)
-        tokens = state.tokens
+        async with state.lock:
+            _refill_tokens(state)
+            tokens = state.tokens
         queue_len = state.queue.qsize()
 
     cutoff = time.time() - 3600

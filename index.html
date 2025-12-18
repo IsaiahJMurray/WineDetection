@@ -209,7 +209,46 @@
 
       const t0 = performance.now();
       try {
-        const data = await fetchJsonWithRetry(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json", "x-client-id": clientId }, body: JSON.stringify({ text }) }, 2, 300);
+        const res = await fetch(apiUrl, { 
+          method: "POST", 
+          headers: { 
+            "Content-Type": "application/json", 
+            "Accept": "application/json", 
+            "x-client-id": clientId 
+          }, 
+          body: JSON.stringify({ text }) 
+        });
+        
+        if (!res.ok) {
+          const ct = res.headers.get('content-type') || '';
+          let errorMsg = `HTTP ${res.status}`;
+          if (ct.indexOf('application/json') !== -1) {
+            try {
+              const errData = await res.json();
+              errorMsg = errData.detail || errorMsg;
+            } catch (e) {}
+          }
+          
+          if (res.status === 429) {
+            setStatus(false, "Rate limited");
+            metaEl.textContent = `Rate limit: ${errorMsg}. Check tokens/queue above.`;
+          } else if (res.status === 413) {
+            setStatus(false, "Request too long");
+            metaEl.textContent = `Request too long: ${errorMsg}`;
+          } else {
+            setStatus(false, `Error ${res.status}`);
+            metaEl.textContent = errorMsg;
+          }
+          return;
+        }
+        
+        const ct = res.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) {
+          const txt = await res.text();
+          throw new Error('non-json:' + txt.slice(0,200));
+        }
+        
+        const data = await res.json();
         const dt = (performance.now() - t0).toFixed(0);
 
         setStatus(true, `OK (${dt} ms)`);
@@ -217,7 +256,7 @@
 
         renderBars(data.predictions || {});
       } catch (e) {
-        setStatus(false, "Disconnected");
+        setStatus(false, "Error");
         metaEl.textContent = String(e).slice(0,200);
         console.error('predictNow error', e);
         return;
