@@ -246,7 +246,7 @@
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const data = await fetchJsonWithRetry(url, { headers: { "Accept": "application/json", "x-client-id": clientId } }, 2, 300);
+        const data = await fetchJsonWithRetry(url, { method: "POST", headers: { "Content-Type": "text/plain", "Accept": "application/json" }, body: clientId }, 2, 300);
 
         // populate category select
         categorySelect.innerHTML = "";
@@ -292,16 +292,8 @@
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const res = await fetch(url, { headers: { "Accept": "application/json", "x-client-id": clientId } });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const ct = res.headers.get('content-type') || '';
-        if (ct.indexOf('application/json') === -1) {
-          const txt = await res.text();
-          console.warn('examples(change) returned non-JSON:', txt.slice(0,300));
-          throw new Error('Examples endpoint returned non-JSON response');
-        }
-        const data = await res.json();
-        populateExamplesFor(categorySelect.value, data);
+        const data = await fetchJsonWithRetry(url, { method: "POST", headers: { "Content-Type": "text/plain", "Accept": "application/json" }, body: clientId }, 2, 300);
+          populateExamplesFor(categorySelect.value, data);
       } catch (e) { console.error(e); }
     });
 
@@ -310,7 +302,7 @@
       const base = examplesBaseUrl();
       const url = base + "/api/status";
       try {
-        const data = await fetchJsonWithRetry(url, { headers: { "Accept": "application/json", "x-client-id": clientId } }, 2, 300);
+        const data = await fetchJsonWithRetry(url, { method: "POST", headers: { "Content-Type": "text/plain", "Accept": "application/json" }, body: clientId }, 2, 300);
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;

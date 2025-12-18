@@ -213,6 +213,73 @@ def get_examples():
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+@app.post("/api/examples")
+async def post_examples(request: Request):
+    """Accept a POST (plain/text or JSON) and return examples.json.
+
+    This variant allows clients to send a device id in the request body
+    without using custom headers, avoiding some CORS preflight behavior
+    with certain tunnels/proxies.
+    """
+    p = Path(__file__).parent / "examples.json"
+    if not p.exists():
+        return JSONResponse(status_code=404, content={"error": "examples.json not found"})
+
+    try:
+        # consume body but we don't require its content
+        try:
+            _ = await request.body()
+        except Exception:
+            pass
+        with p.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/status")
+async def client_status_post(request: Request):
+    """POST variant of /api/status. Reads device id from plain text body or JSON payload.
+    Useful for clients that avoid custom headers and send the device id in the body.
+    """
+    body = None
+    try:
+        raw = await request.body()
+        if raw:
+            s = raw.decode("utf-8").strip()
+            # try parse JSON if possible
+            try:
+                j = json.loads(s)
+                body = j.get("client_id") if isinstance(j, dict) else s
+            except Exception:
+                body = s
+    except Exception:
+        body = None
+
+    client_id = None
+    if body:
+        client_id = body
+    else:
+        client_id = request.headers.get("x-client-id")
+    if not client_id:
+        client_id = request.client.host if request.client else "unknown"
+
+    state = clients.get(client_id)
+    if state is None:
+        tokens = RATE_LIMIT_TOKENS
+        queue_len = 0
+    else:
+        _refill_tokens(state)
+        tokens = state.tokens
+        queue_len = state.queue.qsize()
+
+    cutoff = time.time() - 3600
+    users_past_hour = sum(1 for t in last_seen.values() if t >= cutoff)
+
+    return {"client_id": client_id, "tokens": tokens, "queue_len": queue_len, "users_past_hour": users_past_hour}
+
+
 def _cors_preflight_response():
     headers = {
         "Access-Control-Allow-Origin": "*",
