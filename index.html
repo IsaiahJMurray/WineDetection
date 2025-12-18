@@ -222,7 +222,7 @@
         console.error('predictNow error', e);
         return;
       }
-
+    }
     const predictDebounced = debounce(predictNow, 300);
 
     textEl.addEventListener("input", () => predictDebounced());

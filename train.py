@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
+import csv
 
 import torch
 from datasets import Dataset
@@ -126,6 +127,46 @@ def save_confusion_matrix(y_true, y_pred, id2label, out_path: str):
     plt.close(fig)
 
 
+def save_confusion_csv(y_true, y_pred, id2label, out_path: str):
+    # Build confusion matrix with labels as row/column names
+    # Ensure labels are ordered by id
+    ids = sorted(id2label.keys())
+    labels = [id2label[i] for i in ids]
+    cm = confusion_matrix(y_true, y_pred, labels=ids)
+    # Create DataFrame for CSV
+    import pandas as pd
+    df = pd.DataFrame(cm, index=labels, columns=labels)
+    df.index.name = 'true_label'
+    df.to_csv(out_path)
+
+
+def save_test_results_csv(test_ds, y_true, y_pred, logits, id2label, out_path: str):
+    # logits: raw model outputs (n_samples, n_classes)
+    # Compute softmax probabilities
+    import numpy as _np
+    max_logits = _np.max(logits, axis=1, keepdims=True)
+    exp = _np.exp(logits - max_logits)
+    probs = exp / _np.sum(exp, axis=1, keepdims=True)
+    pred_conf = _np.max(probs, axis=1)
+    # Build rows: text, true_label, true_id, pred_label, pred_id, pred_conf
+    rows = []
+    texts = test_ds["text"]
+    for i in range(len(y_true)):
+        true_id = int(y_true[i])
+        pred_id = int(y_pred[i])
+        rows.append({
+            "text": texts[i],
+            "true_label": id2label[true_id],
+            "true_id": true_id,
+            "pred_label": id2label[pred_id],
+            "pred_id": pred_id,
+            "pred_confidence": float(pred_conf[i])
+        })
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    df.to_csv(out_path, index=False)
+
+
 def main():
     args = parse_args()
     set_seed(args.seed)
@@ -206,6 +247,18 @@ def main():
     save_confusion_matrix(
         y_true, y_pred, id2label,
         os.path.join(out_dir, "confusion_matrix.png")
+    )
+
+    # Save confusion matrix as CSV (for MATLAB)
+    save_confusion_csv(
+        y_true, y_pred, id2label,
+        os.path.join(out_dir, "confusion_matrix.csv")
+    )
+
+    # Save per-sample test results (text, true/pred labels, predicted confidence)
+    save_test_results_csv(
+        test_ds, y_true, y_pred, preds.predictions, id2label,
+        os.path.join(out_dir, "test_results.csv")
     )
 
     m = Metrics(
