@@ -101,6 +101,12 @@
       .main-grid {
         grid-template-columns: 1fr 1fr;
       }
+      .input-card {
+        grid-column: 0;
+      }
+      .results-card {
+        grid-column: 1;
+      }
     }
     
     /* Cards */
@@ -133,12 +139,12 @@
     }
     
     .card:hover::before {
-      opacity: 1;
+      opacity: 0;
     }
     
     /* Input card */
     .input-card {
-      grid-column: 2;
+      grid-column: none;
     }
     
     @media (min-width: 900px) {
@@ -147,6 +153,7 @@
       }
       .results-card {
         grid-column: none;
+        width: 100%;
       }
     }
     
@@ -243,7 +250,7 @@
     /* Results card */
     .results-card {
       min-height: 300px;
-      grid-column: 2;
+      grid-column: none;
     }
     
     .results-placeholder {
