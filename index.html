@@ -209,26 +209,19 @@
 
       const t0 = performance.now();
       try {
-        try {
-          const data = await fetchJsonWithRetry(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json", "x-client-id": clientId }, body: JSON.stringify({ text }) }, 2, 300);
-          const dt = (performance.now() - t0).toFixed(0);
+        const data = await fetchJsonWithRetry(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json", "x-client-id": clientId }, body: JSON.stringify({ text }) }, 2, 300);
+        const dt = (performance.now() - t0).toFixed(0);
 
-          setStatus(true, `OK (${dt} ms)`);
-          metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
+        setStatus(true, `OK (${dt} ms)`);
+        metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
 
-          renderBars(data.predictions || {});
-        } catch (e) {
-          setStatus(false, "Disconnected");
-          metaEl.textContent = String(e).slice(0,200);
-          console.error('predictNow error', e);
-          return;
-        }
+        renderBars(data.predictions || {});
       } catch (e) {
-          setStatus(false, "Disconnected");
-          metaEl.textContent = String(e).slice(0,200);
-          console.error('general error', e);
-          return;
-    }
+        setStatus(false, "Disconnected");
+        metaEl.textContent = String(e).slice(0,200);
+        console.error('predictNow error', e);
+        return;
+      }
 
     const predictDebounced = debounce(predictNow, 300);
 
