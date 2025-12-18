@@ -295,12 +295,35 @@
       const url = base + "/api/status";
       try {
         const res = await fetch(url, { headers: { "x-client-id": clientId } });
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.warn('status fetch returned', res.status);
+          tokensEl.textContent = 'ERR';
+          queueEl.textContent = '-';
+          return;
+        }
+
+        const ct = res.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) {
+          // non-json response (likely an HTML error/interstitial from ngrok)
+          const txt = await res.text();
+          console.warn('status endpoint returned non-JSON:', txt.slice(0,300));
+          tokensEl.textContent = 'ERR';
+          queueEl.textContent = '-';
+          // surface a short message to meta for debugging
+          metaEl.textContent = 'Status endpoint returned non-JSON response (see console).';
+          return;
+        }
+
         const data = await res.json();
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.error('fetchStatus failed', e);
+        tokensEl.textContent = 'ERR';
+        queueEl.textContent = '-';
+        metaEl.textContent = 'Status fetch failed: ' + String(e).slice(0,200);
+      }
     }
 
     // poll every 5s
