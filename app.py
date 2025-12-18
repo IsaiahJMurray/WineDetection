@@ -24,8 +24,8 @@ model.eval()
 
 # --- Rate limit / queue configuration ---
 # Per-IP token bucket: capacity tokens and refill interval (seconds per token)
-RATE_LIMIT_TOKENS = 30          # burst capacity
-RATE_REFILL_SECONDS = 10         # one token every 10 seconds (~6 tokens per minute)
+RATE_LIMIT_TOKENS = 100          # burst capacity
+RATE_REFILL_SECONDS = 5         # one token every 5 seconds (~12 tokens per minute)
 
 # Per-IP queue: how many requests we allow queued waiting for processing
 PER_IP_QUEUE_SIZE = 8

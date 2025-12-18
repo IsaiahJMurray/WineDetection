@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <!-- viewport-fit=cover helps iOS safe-area; we will manage keyboard with VisualViewport -->
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Wine Classifier</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -26,10 +27,10 @@
       --error: #ef4444;
       --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 
-      /* Mobile keyboard handling: updated by JS */
+      /* updated by JS */
       --kb-inset: 0px;
+      --composer-h: 240px;
 
-      /* Motion timing */
       --ease-out: cubic-bezier(0.2, 0.9, 0.2, 1);
       --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
       --dur-fast: 180ms;
@@ -48,6 +49,7 @@
       overflow-x: hidden;
     }
 
+    /* Subtle background pattern */
     body::before {
       content: '';
       position: fixed;
@@ -62,27 +64,17 @@
     .container {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 40px 24px calc(24px + var(--kb-inset) + env(safe-area-inset-bottom));
+      padding: 40px 24px;
       position: relative;
       z-index: 1;
     }
 
+    /* Header */
     .header {
       text-align: center;
       margin-bottom: 40px;
       animation: fadeInDown 0.6s ease-out;
     }
-
-    textarea[readonly].locked {
-    opacity: 0.75;
-    cursor: not-allowed;
-    }
-
-    textarea[readonly].locked:focus {
-    border-color: var(--border);
-    box-shadow: none;
-    }
-
 
     .header h1 {
       font-size: 36px;
@@ -101,7 +93,7 @@
       font-weight: 400;
     }
 
-    /* Layout */
+    /* Main grid */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -150,10 +142,8 @@
       opacity: 0.9;
     }
 
-    /* Results card gets special sticky behavior on mobile while typing */
-    .results-card {
-      min-height: 320px;
-    }
+    /* Results */
+    .results-card { min-height: 320px; }
 
     .results-head {
       display: flex;
@@ -161,19 +151,6 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 10px;
-    }
-
-    .results-sticky {
-      position: sticky;
-      top: 12px;
-      z-index: 5;
-    }
-
-    @media (min-width: 900px) {
-      /* On desktop, keep results visible while scrolling */
-      .results-sticky {
-        top: 18px;
-      }
     }
 
     .results-sub {
@@ -197,13 +174,12 @@
       position: relative;
     }
 
-    /* Bar rows: FLIP-enabled; we animate transform/opacity/scale */
+    /* Bar rows: FLIP reorder */
     .bar-row {
       display: grid;
       grid-template-columns: minmax(110px, 160px) 1fr 70px;
       gap: 14px;
       align-items: center;
-
       will-change: transform;
       transform: translateZ(0);
     }
@@ -257,29 +233,27 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* First-time pop-in animation (from zero) */
+    /* Entry/exit animations without height changes */
     .enter {
       opacity: 0;
       transform: translateY(10px) scale(0.98);
       animation: popIn var(--dur-med) var(--ease-out) forwards;
     }
 
-    @keyframes popIn {
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
+    @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } }
 
-    /* Removal animation */
     .exit {
       opacity: 1;
       transform: translateY(0) scale(1);
       transition: opacity var(--dur-fast) var(--ease-inout), transform var(--dur-fast) var(--ease-inout);
     }
+
     .exit.final {
       opacity: 0;
       transform: translateY(-6px) scale(0.98);
     }
 
-    /* Input card */
+    /* Textarea */
     textarea {
       width: 100%;
       min-height: 160px;
@@ -293,7 +267,7 @@
       line-height: 1.6;
       resize: vertical;
       outline: none;
-      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), background var(--dur-fast) var(--ease-inout);
+      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), background var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
     }
 
     textarea::placeholder { color: var(--text-tertiary); }
@@ -304,6 +278,17 @@
       background: rgba(15, 15, 21, 0.9);
     }
 
+    /* Lock state: prevents edits but allows scroll/copy */
+    textarea[readonly].locked {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+    textarea[readonly].locked:focus {
+      border-color: var(--border);
+      box-shadow: none;
+    }
+
+    /* Request button */
     .request-btn {
       margin-top: 16px;
       padding: 12px 24px;
@@ -324,9 +309,9 @@
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
-
     .request-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    /* Queue notice */
     .queue-notice {
       margin-top: 12px;
       padding: 12px 16px;
@@ -339,6 +324,7 @@
       animation: slideIn 0.28s var(--ease-out);
     }
 
+    /* Status indicator */
     .status-indicator {
       display: inline-flex;
       align-items: center;
@@ -355,17 +341,10 @@
       background: var(--text-tertiary);
       animation: pulse 2s infinite;
     }
+    .status-dot.ok { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+    .status-dot.bad { background: var(--error); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 
-    .status-dot.ok {
-      background: var(--success);
-      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-    }
-
-    .status-dot.bad {
-      background: var(--error);
-      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-    }
-
+    /* Advanced settings */
     .advanced-toggle {
       margin-top: 24px;
       padding-top: 24px;
@@ -423,7 +402,6 @@
       outline: none;
       transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout);
     }
-
     .advanced-input:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px var(--accent-glow);
@@ -453,7 +431,6 @@
       padding-top: 16px;
       border-top: 1px solid var(--border);
     }
-
     .stat-item { font-size: 12px; color: var(--text-secondary); }
     .stat-value { color: var(--text-primary); font-weight: 600; }
 
@@ -461,8 +438,8 @@
     .examples-panel.visible { display: block; }
     .examples-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
 
+    /* Meta info */
     .meta { margin-top: 12px; font-size: 12px; color: var(--text-tertiary); }
-    code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: var(--accent); font-family: 'Monaco', 'Courier New', monospace; }
 
     /* Animations */
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -470,10 +447,65 @@
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
     @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-    /* Respect reduced motion */
+    /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
       * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
       .bar-fill::after { display: none; }
+    }
+
+    /* ---------------------------
+       Mobile "split view" layout:
+       Results on top, input fixed above keyboard.
+       This keeps BOTH visible during typing.
+       --------------------------- */
+    @media (max-width: 899px) {
+      .container {
+        max-width: 100%;
+        padding: 18px 16px;
+      }
+
+      .header { margin-bottom: 16px; }
+      .main-grid { display: block; }
+
+      /* Results: fixed, scrollable pane */
+      .results-card {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        top: calc(16px + 86px); /* header space; JS also measures composer height */
+        bottom: calc(16px + var(--composer-h) + var(--kb-inset) + env(safe-area-inset-bottom));
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 18px;
+      }
+
+      /* Sticky results header inside scrolling pane */
+      .results-head {
+        position: sticky;
+        top: 0;
+        padding: 10px 0 8px;
+        background: rgba(15, 15, 21, 0.92);
+        backdrop-filter: blur(10px);
+        z-index: 2;
+      }
+
+      /* Input composer: fixed above keyboard */
+      .input-card {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        bottom: calc(16px + var(--kb-inset) + env(safe-area-inset-bottom));
+        padding: 18px;
+      }
+
+      textarea {
+        min-height: 120px;
+        max-height: 28vh;
+        resize: none;
+      }
+
+      /* Touch devices: remove hover shadow feel */
+      .card:hover { box-shadow: none; }
     }
   </style>
 </head>
@@ -486,11 +518,12 @@
     </div>
 
     <div class="main-grid">
-      <div class="card results-card results-sticky">
+      <div class="card results-card">
         <div class="results-head">
           <div class="card-title" style="margin-bottom:0;">Predictions</div>
           <div class="results-sub" id="resultsSub">—</div>
         </div>
+
         <div class="bars" id="bars">
           <div class="results-placeholder" id="placeholder">Enter a tasting note to see predictions</div>
         </div>
@@ -501,7 +534,7 @@
         <textarea id="text" placeholder="e.g., black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
 
         <div id="queueModeNotice" class="queue-notice">
-          ⚠️ Rate limited: Real-time updates disabled. Use the button below to queue requests.
+          ⚠️ Rate limited: Real-time updates disabled. Requests are queued. Editing is temporarily locked to prevent desync.
         </div>
 
         <button id="requestBtn" class="request-btn">Request Prediction</button>
@@ -531,7 +564,7 @@
               </div>
 
               <div class="advanced-buttons">
-                <button id="pingBtn" class="btn-secondary">Test Connection</button>
+                <button id="pingBtn" class="btn-secondary">Ping Connection</button>
                 <button id="loadExamplesBtn" class="btn-secondary">Load Examples</button>
               </div>
 
@@ -558,18 +591,16 @@
 
   <script>
     // ---------------------------
-    // Mobile keyboard handling
+    // Keyboard inset (VisualViewport)
     // ---------------------------
     (function setupKeyboardInset(){
       const root = document.documentElement;
       function updateInset() {
-        // VisualViewport is the most reliable on mobile for keyboard height inference.
         if (!window.visualViewport) {
           root.style.setProperty('--kb-inset', '0px');
           return;
         }
         const vv = window.visualViewport;
-        // When keyboard opens, vv.height shrinks vs window.innerHeight.
         const diff = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         root.style.setProperty('--kb-inset', diff + 'px');
       }
@@ -582,7 +613,7 @@
     })();
 
     // ---------------------------
-    // Debounce (per-function, no global timer collisions)
+    // Debounce (per-function)
     // ---------------------------
     function makeDebounce(fn, getDelayMs) {
       let t = null;
@@ -618,10 +649,12 @@
     const debounceDelayEl = document.getElementById("debounceDelay");
     const resultsSub = document.getElementById("resultsSub");
 
+    // State
     let realtimeEnabled = true;
     let pendingRequest = false;
     let advancedVisible = false;
 
+    // Debounce delay
     let debounceDelay = 150;
     const savedDelay = localStorage.getItem('qea_debounce_delay');
     if (savedDelay) {
@@ -638,10 +671,12 @@
       }
     });
 
+    // Advanced settings toggle
     advancedToggle.addEventListener('click', () => {
       advancedVisible = !advancedVisible;
       advancedToggle.classList.toggle('expanded', advancedVisible);
       advancedPanel.classList.toggle('visible', advancedVisible);
+      setTimeout(updateComposerHeight, 0);
     });
 
     function setStatus(ok, msg) {
@@ -649,7 +684,9 @@
       dot.className = "status-dot " + (ok ? "ok" : "bad");
     }
 
-    // client id
+    // ---------------------------
+    // Client id
+    // ---------------------------
     let clientId = localStorage.getItem('qea_client_id');
     if (!clientId) {
       if (window.crypto && crypto.randomUUID) clientId = crypto.randomUUID();
@@ -658,8 +695,47 @@
     }
     clientIdEl.textContent = clientId.substring(0, 8) + '...';
 
-    // fetch helper
-    async function fetchJsonWithRetry(url, opts = {}, retries = 2, backoff = 300) {
+    // ---------------------------
+    // Composer height measurement (for mobile split layout)
+    // ---------------------------
+    function updateComposerHeight() {
+      const el = document.querySelector('.input-card');
+      const h = el ? el.getBoundingClientRect().height : 240;
+      document.documentElement.style.setProperty('--composer-h', Math.ceil(h) + 'px');
+    }
+    updateComposerHeight();
+    window.addEventListener('resize', updateComposerHeight);
+
+    // ---------------------------
+    // Input lock while queued (prevents edits)
+    // ---------------------------
+    function setInputLocked(locked, reason) {
+      textEl.readOnly = locked;
+      textEl.classList.toggle('locked', locked);
+
+      if (locked && reason) {
+        textEl.setAttribute('aria-busy', 'true');
+        textEl.setAttribute('aria-label', `Input locked: ${reason}`);
+      } else {
+        textEl.removeAttribute('aria-busy');
+        textEl.removeAttribute('aria-label');
+      }
+    }
+
+    // Extra hardening for browsers that can still fire input events
+    textEl.addEventListener('beforeinput', (e) => {
+      if (textEl.readOnly) e.preventDefault();
+    });
+    textEl.addEventListener('keydown', (e) => {
+      if (!textEl.readOnly) return;
+      const block = (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete" || e.key === "Enter");
+      if (block) e.preventDefault();
+    });
+
+    // ---------------------------
+    // Fetch helper
+    // ---------------------------
+    async function fetchJsonWithRetry(url, opts = {}, retries = 2, backoff = 250) {
       let lastErr = null;
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
@@ -685,11 +761,56 @@
     }
 
     // ---------------------------
+    // Connectivity ping (auto + button)
+    // Uses POST /api/status (body=clientId) to avoid custom headers/preflight quirks.
+    // ---------------------------
+    async function pingConnectivity() {
+      const base = examplesBaseUrl();
+      const url = base + "/api/status";
+      const t0 = performance.now();
+
+      try {
+        const data = await fetchJsonWithRetry(url, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
+          body: clientId
+        }, 1, 200);
+
+        const dt = Math.round(performance.now() - t0);
+        setStatus(true, `Connected (${dt}ms)`);
+        metaEl.textContent = `Status OK • ${dt}ms`;
+        resultsSub.textContent = `${dt}ms • status`;
+
+        tokensEl.textContent = data.tokens;
+        queueEl.textContent = data.queue_len;
+        usersHourEl.textContent = data.users_past_hour;
+
+        updateRealtimeMode();
+        return true;
+      } catch (e) {
+        setStatus(false, "Disconnected");
+        metaEl.textContent = `Ping failed: ${String(e).slice(0, 120)}`;
+        resultsSub.textContent = `offline`;
+        // In offline state, do NOT force queue mode UI; just keep manual request visible if needed.
+        requestBtn.style.display = 'block';
+        requestBtn.textContent = 'Reconnect';
+        queueModeNotice.style.display = 'none';
+        setInputLocked(false);
+        return false;
+      }
+    }
+
+    pingBtn.addEventListener("click", async () => {
+      await pingConnectivity();
+    });
+
+    // ---------------------------
     // High-quality bars: keyed DOM + FLIP reorder + numeric interpolation
     // ---------------------------
     const rowByLabel = new Map(); // label -> {row, labelEl, fillEl, pctEl, lastPct}
     let hasRenderedOnce = false;
 
+    function isMobile() { return window.matchMedia('(max-width: 899px)').matches; }
     function formatPct(v) { return v.toFixed(1) + "%"; }
 
     function tweenNumber(el, from, to, durationMs) {
@@ -697,6 +818,7 @@
       if (!Number.isFinite(to)) to = 0;
       const start = performance.now();
       const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+
       function step(now) {
         const t = Math.min(1, (now - start) / durationMs);
         const v = from + (to - from) * ease(t);
@@ -705,21 +827,6 @@
         else el.textContent = formatPct(to);
       }
       requestAnimationFrame(step);
-    }
-
-    function setInputLocked(locked, reason) {
-        // readonly prevents edits but still allows scrolling/copy/select
-        textEl.readOnly = locked;
-        textEl.classList.toggle('locked', locked);
-
-        // Optional: make it very explicit to the user
-        if (locked && reason) {
-            textEl.setAttribute('aria-busy', 'true');
-            textEl.setAttribute('aria-label', `Input locked: ${reason}`);
-        } else {
-            textEl.removeAttribute('aria-busy');
-            textEl.removeAttribute('aria-label');
-        }
     }
 
     function measurePositions() {
@@ -735,6 +842,7 @@
       for (const [label, beforeRect] of before.entries()) {
         const obj = rowByLabel.get(label);
         if (!obj || !obj.row.isConnected) continue;
+
         const afterRect = after.get(label);
         if (!afterRect) continue;
 
@@ -744,7 +852,6 @@
         if (dx || dy) {
           obj.row.style.transform = `translate(${dx}px, ${dy}px)`;
           obj.row.style.transition = 'transform 0ms';
-          // next frame: animate to 0
           requestAnimationFrame(() => {
             obj.row.style.transition = `transform var(--dur-med) var(--ease-inout)`;
             obj.row.style.transform = 'translate(0, 0)';
@@ -786,43 +893,33 @@
     }
 
     function renderBars(predictions, metaText) {
-      const entries = Object.entries(predictions || {}).sort((a,b) => b[1] - a[1]);
+      let entries = Object.entries(predictions || {}).sort((a,b) => b[1] - a[1]);
 
-      // Placeholder visibility
+      // Keep mobile stable by capping visible rows (reduces scroll-height jump while typing)
+      if (isMobile()) entries = entries.slice(0, 6);
+
       const hasData = entries.length > 0;
       if (placeholderEl) placeholderEl.style.display = hasData ? "none" : "block";
 
-      // Measure before positions for FLIP
       const before = measurePositions();
-
-      // Track labels present this render
       const nextLabels = new Set(entries.map(([k]) => k));
 
-      // Create/update rows
       for (const [label, pct] of entries) {
         const obj = ensureRow(label);
-
-        // Append in new order (this reorders DOM)
         barsEl.appendChild(obj.row);
 
-        // Update label text (stable, but safe)
-        obj.labelEl.textContent = label;
-
-        // Update bar width with CSS transition (interpolates smoothly)
         const w = Math.max(0, Math.min(100, Number(pct) || 0));
         obj.fillEl.style.width = w + "%";
 
-        // Smooth numeric interpolation without resetting to 0 each time
         const from = obj.lastPct;
         obj.lastPct = w;
         tweenNumber(obj.pctEl, from, w, 520);
       }
 
-      // Remove rows that disappeared
+      // Animate out rows not in next set (no reflow-jank; opacity/transform only)
       for (const [label, obj] of rowByLabel.entries()) {
         if (!nextLabels.has(label) && obj.row.isConnected) {
           obj.row.classList.add('exit');
-          // animate out then remove
           requestAnimationFrame(() => {
             obj.row.classList.add('final');
             setTimeout(() => {
@@ -832,21 +929,10 @@
         }
       }
 
-      // Apply FLIP shuffle animation if already rendered once
       if (hasRenderedOnce) applyFLIP(before);
-
-      // For first render, trigger the "pop from zero" fill after rows exist
-      if (!hasRenderedOnce && hasData) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            // widths already set; CSS transitions will animate from 0%
-            // (rows were created with 0%, then updated in same tick above)
-          });
-        });
-      }
-
       hasRenderedOnce = true;
-      resultsSub.textContent = metaText || "—";
+
+      if (metaText) resultsSub.textContent = metaText;
     }
 
     // ---------------------------
@@ -861,21 +947,21 @@
       if (!text) {
         renderBars({}, "");
         metaEl.textContent = "";
-        setStatus(false, "Idle");
         return;
       }
 
       pendingRequest = true;
       requestBtn.disabled = true;
-      setInputLocked(!realtimeEnabled, "waiting in queue");
 
-
+      // If we're in queue mode, lock edits immediately to prevent desync
       if (!realtimeEnabled) {
+        setInputLocked(true, "waiting in queue");
         setStatus(false, "Waiting in queue...");
         requestBtn.textContent = "Processing...";
       }
 
       const t0 = performance.now();
+
       try {
         const res = await fetch(apiUrl, {
           method: "POST",
@@ -899,7 +985,6 @@
             metaEl.textContent = `Rate limit: ${errorMsg}`;
             realtimeEnabled = false;
             updateRealtimeMode();
-            setTimeout(() => fetchStatus(), 500);
           } else if (res.status === 413) {
             setStatus(false, "Request too long");
             metaEl.textContent = `Request too long: ${errorMsg}`;
@@ -917,13 +1002,15 @@
         }
 
         const data = await res.json();
-        const dt = (performance.now() - t0).toFixed(0);
+        const dt = Math.round(performance.now() - t0);
 
         setStatus(true, `Connected (${dt}ms)`);
         metaEl.textContent = `Device: ${data.device ?? "unknown"} • ${dt}ms`;
 
         renderBars(data.predictions || {}, `${dt}ms • ${data.device ?? "unknown"}`);
-        setTimeout(() => fetchStatus(), 500);
+
+        // Refresh status shortly after a prediction
+        setTimeout(() => fetchStatus(), 400);
 
       } catch (e) {
         setStatus(false, "Error");
@@ -933,7 +1020,9 @@
         pendingRequest = false;
         requestBtn.disabled = false;
         requestBtn.textContent = "Request Prediction";
-        setInputLocked(!realtimeEnabled, realtimeEnabled ? "" : "waiting in queue");
+
+        // Keep locked if still queued, otherwise unlock
+        setInputLocked(!realtimeEnabled, !realtimeEnabled ? "waiting in queue" : "");
       }
     }
 
@@ -943,26 +1032,29 @@
       if (realtimeEnabled && !pendingRequest) predictDebounced();
     });
 
-    // Keep results visible when focusing textarea (especially on mobile)
-    textEl.addEventListener("focus", () => {
-      // small delay so keyboard/layout settles, then ensure results are still on screen
-      setTimeout(() => {
-        document.querySelector('.results-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }, 50);
-    });
-
-    requestBtn.addEventListener("click", async () => { await predictNow(); });
-
-    pingBtn.addEventListener("click", async () => {
-      const prev = textEl.value;
-      if (!prev.trim()) textEl.value = "black cherry, oak, tannins";
+    requestBtn.addEventListener("click", async () => {
+      // If we are offline and button says Reconnect, do that
+      if (requestBtn.textContent === 'Reconnect') {
+        await pingConnectivity();
+        return;
+      }
       await predictNow();
-      if (!prev.trim()) textEl.value = "";
     });
 
     // ---------------------------
     // Examples
     // ---------------------------
+    function populateExamplesFor(category, data) {
+      const arr = data[category] || [];
+      exampleSelect.innerHTML = "";
+      for (const ex of arr) {
+        const o = document.createElement('option');
+        o.value = ex;
+        o.textContent = ex.length > 80 ? ex.slice(0, 80) + '...' : ex;
+        exampleSelect.appendChild(o);
+      }
+    }
+
     async function loadExamples() {
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
@@ -988,6 +1080,7 @@
 
         examplesPanel.classList.add('visible');
         setStatus(true, "Examples loaded");
+        setTimeout(updateComposerHeight, 0);
       } catch (e) {
         setStatus(false, "Examples load failed");
         console.error(e);
@@ -995,18 +1088,9 @@
       }
     }
 
-    function populateExamplesFor(category, data) {
-      const arr = data[category] || [];
-      exampleSelect.innerHTML = "";
-      for (const ex of arr) {
-        const o = document.createElement('option');
-        o.value = ex;
-        o.textContent = ex.length > 80 ? ex.slice(0, 80) + '...' : ex;
-        exampleSelect.appendChild(o);
-      }
-    }
-
-    loadExamplesBtn.addEventListener('click', async () => { await loadExamples(); });
+    loadExamplesBtn.addEventListener('click', async () => {
+      await loadExamples();
+    });
 
     categorySelect.addEventListener('change', async () => {
       const base = examplesBaseUrl();
@@ -1018,6 +1102,7 @@
           body: clientId
         }, 2, 300);
         populateExamplesFor(categorySelect.value, data);
+        setTimeout(updateComposerHeight, 0);
       } catch (e) { console.error(e); }
     });
 
@@ -1025,35 +1110,46 @@
       const v = exampleSelect.value || '';
       if (v) {
         textEl.value = v;
-        if (realtimeEnabled && !pendingRequest) predictDebounced();
-        else predictNow();
+
+        if (realtimeEnabled && !pendingRequest) {
+          predictDebounced();
+        } else {
+          predictNow();
+        }
       }
     });
 
     // ---------------------------
-    // Status / realtime gating
+    // Realtime / queue mode gating
     // ---------------------------
     function updateRealtimeMode() {
       const tokens = parseInt(tokensEl.textContent) || 0;
       const queueLen = parseInt(queueEl.textContent) || 0;
+
+      // Realtime only when tokens available and no queue backlog
       const shouldEnable = tokens > 0 && queueLen === 0;
 
       if (shouldEnable !== realtimeEnabled) {
         realtimeEnabled = shouldEnable;
-
-        if (realtimeEnabled) {
-          requestBtn.style.display = 'none';
-          queueModeNotice.style.display = 'none';
-          setInputLocked(false);
-          predictDebounced.cancel();
-          if (textEl.value.trim() && !pendingRequest) predictDebounced();
-        } else {
-          predictDebounced.cancel();
-          requestBtn.style.display = 'block';
-          queueModeNotice.style.display = 'block';
-          setInputLocked(true, "waiting in queue");
-        }
       }
+
+      if (realtimeEnabled) {
+        requestBtn.style.display = 'none';
+        queueModeNotice.style.display = 'none';
+        setInputLocked(false);
+
+        // If the user already typed and we're idle, run a debounced prediction
+        if (textEl.value.trim() && !pendingRequest) predictDebounced();
+      } else {
+        predictDebounced.cancel();
+        requestBtn.style.display = 'block';
+        queueModeNotice.style.display = 'block';
+
+        // Lock input while queued to prevent user edits while their queued request is outstanding
+        setInputLocked(true, "waiting in queue");
+      }
+
+      setTimeout(updateComposerHeight, 0);
     }
 
     async function fetchStatus() {
@@ -1064,23 +1160,34 @@
           method: "POST",
           headers: { "Content-Type": "text/plain", "Accept": "application/json" },
           body: clientId
-        }, 2, 300);
+        }, 1, 200);
 
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
+
         updateRealtimeMode();
       } catch (e) {
         console.error('fetchStatus failed', e);
         tokensEl.textContent = 'ERR';
         queueEl.textContent = '-';
+        // do not force queue lock here; treat as connectivity issue
       }
     }
 
-    // Initial
+    // ---------------------------
+    // Init: auto-ping connectivity, then status polling
+    // ---------------------------
     setStatus(false, "Connecting...");
-    fetchStatus().then(() => updateRealtimeMode());
+    pingConnectivity();     // auto ping without requiring user input
+    fetchStatus();          // populate token/queue stats quickly
     setInterval(fetchStatus, 5000);
+
+    // If API URL changes, re-ping quickly
+    apiUrlEl.addEventListener('change', () => {
+      pingConnectivity();
+      fetchStatus();
+    });
   </script>
 </body>
 </html>
