@@ -143,7 +143,10 @@
     
     @media (min-width: 900px) {
       .input-card {
-        grid-column: 1;
+        grid-column: none;
+      }
+      .results-card {
+        grid-column: none;
       }
     }
     
@@ -240,6 +243,7 @@
     /* Results card */
     .results-card {
       min-height: 300px;
+      grid-column: 2;
     }
     
     .results-placeholder {
