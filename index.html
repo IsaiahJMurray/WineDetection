@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Wine Classifier</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
+
     :root {
       --bg-primary: #0a0a0f;
       --bg-secondary: #0f0f15;
@@ -24,55 +25,54 @@
       --warning: #f59e0b;
       --error: #ef4444;
       --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+
+      /* Mobile keyboard handling: updated by JS */
+      --kb-inset: 0px;
+
+      /* Motion timing */
+      --ease-out: cubic-bezier(0.2, 0.9, 0.2, 1);
+      --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+      --dur-fast: 180ms;
+      --dur-med: 420ms;
+      --dur-slow: 760ms;
     }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
       line-height: 1.6;
-      min-height: 100vh;
-      padding: 0;
-      margin: 0;
       overflow-x: hidden;
     }
-    
-    /* Subtle background pattern */
+
     body::before {
       content: '';
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
+      inset: 0;
+      background:
         radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
         radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
-    
+
     .container {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 40px 24px;
+      padding: 40px 24px calc(24px + var(--kb-inset) + env(safe-area-inset-bottom));
       position: relative;
       z-index: 1;
     }
-    
-    /* Header */
+
     .header {
       text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 40px;
       animation: fadeInDown 0.6s ease-out;
     }
-    
+
     .header h1 {
       font-size: 36px;
       font-weight: 700;
@@ -83,100 +83,192 @@
       margin-bottom: 12px;
       letter-spacing: -0.5px;
     }
-    
+
     .header p {
       color: var(--text-secondary);
       font-size: 16px;
       font-weight: 400;
     }
-    
-    /* Main content grid */
+
+    /* Layout */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 24px;
+      align-items: start;
     }
-    
+
     @media (min-width: 900px) {
-      .main-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-      .input-card {
-        grid-column: 0;
-      }
-      .results-card {
-        grid-column: 1;
-      }
+      .main-grid { grid-template-columns: 1fr 1fr; }
     }
-    
+
     /* Cards */
     .card {
-      background: var(--bg-secondary);
+      background: rgba(15, 15, 21, 0.86);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 28px;
       backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
+      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout);
       position: relative;
       overflow: hidden;
     }
-    
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--gradient);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    
+
     .card:hover {
       border-color: var(--border-light);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
-    
-    .card:hover::before {
-      opacity: 0;
-    }
-    
-    /* Input card */
-    .input-card {
-      grid-column: 1;
-    }
-    
-    @media (min-width: 900px) {
-      .input-card {
-        grid-column: 2;
-      }
-      .results-card {
-        grid-column: none;
-        width: 100%;
-      }
-    }
-    
+
     .card-title {
       font-size: 14px;
       font-weight: 600;
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
-    
+
     .card-title::after {
       content: '';
       flex: 1;
       height: 1px;
       background: var(--border);
+      opacity: 0.9;
     }
-    
-    /* Textarea */
+
+    /* Results card gets special sticky behavior on mobile while typing */
+    .results-card {
+      min-height: 320px;
+    }
+
+    .results-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .results-sticky {
+      position: sticky;
+      top: 12px;
+      z-index: 5;
+    }
+
+    @media (min-width: 900px) {
+      /* On desktop, keep results visible while scrolling */
+      .results-sticky {
+        top: 18px;
+      }
+    }
+
+    .results-sub {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .results-placeholder {
+      color: var(--text-tertiary);
+      font-size: 14px;
+      text-align: center;
+      padding: 56px 16px;
+    }
+
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+
+    /* Bar rows: FLIP-enabled; we animate transform/opacity/scale */
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(110px, 160px) 1fr 70px;
+      gap: 14px;
+      align-items: center;
+
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
+    @media (max-width: 420px) {
+      .bar-row { grid-template-columns: 1fr; gap: 8px; }
+      .bar-pct { text-align: left; }
+    }
+
+    .bar-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bar-track {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--gradient);
+      border-radius: 999px;
+      width: 0%;
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.35);
+      transition: width var(--dur-slow) var(--ease-inout);
+      position: relative;
+    }
+
+    .bar-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+      animation: shimmer 3.2s infinite;
+      pointer-events: none;
+    }
+
+    .bar-pct {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* First-time pop-in animation (from zero) */
+    .enter {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+      animation: popIn var(--dur-med) var(--ease-out) forwards;
+    }
+
+    @keyframes popIn {
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Removal animation */
+    .exit {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition: opacity var(--dur-fast) var(--ease-inout), transform var(--dur-fast) var(--ease-inout);
+    }
+    .exit.final {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+
+    /* Input card */
     textarea {
       width: 100%;
       min-height: 160px;
@@ -190,20 +282,17 @@
       line-height: 1.6;
       resize: vertical;
       outline: none;
-      transition: all 0.2s ease;
+      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), background var(--dur-fast) var(--ease-inout);
     }
-    
-    textarea::placeholder {
-      color: var(--text-tertiary);
-    }
-    
+
+    textarea::placeholder { color: var(--text-tertiary); }
+
     textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-glow);
-      background: var(--bg-secondary);
+      background: rgba(15, 15, 21, 0.9);
     }
-    
-    /* Request button */
+
     .request-btn {
       margin-top: 16px;
       padding: 12px 24px;
@@ -214,27 +303,19 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: transform var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
       display: none;
       align-self: flex-start;
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
-    
+
     .request-btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
-    
-    .request-btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
-    
-    .request-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    
-    /* Queue notice */
+
+    .request-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .queue-notice {
       margin-top: 12px;
       padding: 12px 16px;
@@ -244,138 +325,9 @@
       color: var(--warning);
       font-size: 13px;
       display: none;
-      animation: slideIn 0.3s ease;
+      animation: slideIn 0.28s var(--ease-out);
     }
-    
-    /* Results card */
-    .results-card {
-      min-height: 300px;
-      grid-column: 1;
-    }
-    
-    .results-placeholder {
-      color: var(--text-tertiary);
-      font-size: 14px;
-      text-align: center;
-      padding: 60px 20px;
-    }
-    
-    /* Prediction bars */
-    .bars {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    
-    .bar-row {
-      display: grid;
-      grid-template-columns: 140px 1fr 70px;
-      gap: 16px;
-      align-items: center;
-      opacity: 0;
-      transform: translateX(-20px);
-      animation: slideInBar 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    
-    .bar-row:nth-child(1) { animation-delay: 0.05s; }
-    .bar-row:nth-child(2) { animation-delay: 0.1s; }
-    .bar-row:nth-child(3) { animation-delay: 0.15s; }
-    .bar-row:nth-child(4) { animation-delay: 0.2s; }
-    .bar-row:nth-child(5) { animation-delay: 0.25s; }
-    .bar-row:nth-child(n+6) { animation-delay: 0.3s; }
-    
-    @keyframes slideInBar {
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    .bar-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: 0;
-      animation: fadeInText 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    
-    .bar-row:nth-child(1) .bar-label { animation-delay: 0.1s; }
-    .bar-row:nth-child(2) .bar-label { animation-delay: 0.15s; }
-    .bar-row:nth-child(3) .bar-label { animation-delay: 0.2s; }
-    .bar-row:nth-child(4) .bar-label { animation-delay: 0.25s; }
-    .bar-row:nth-child(5) .bar-label { animation-delay: 0.3s; }
-    .bar-row:nth-child(n+6) .bar-label { animation-delay: 0.35s; }
-    
-    @keyframes fadeInText {
-      to {
-        opacity: 1;
-      }
-    }
-    
-    .bar-track {
-      height: 8px;
-      background: var(--bg-tertiary);
-      border-radius: 999px;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .bar-fill {
-      height: 100%;
-      background: var(--gradient);
-      border-radius: 999px;
-      width: 0%;
-      box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
-      position: relative;
-      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .bar-fill::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-      animation: shimmer 3s infinite;
-      pointer-events: none;
-    }
-    
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-    
-    .bar-pct {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      opacity: 0;
-      transform: translateX(10px);
-      animation: slideInPct 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    
-    .bar-row:nth-child(1) .bar-pct { animation-delay: 0.2s; }
-    .bar-row:nth-child(2) .bar-pct { animation-delay: 0.25s; }
-    .bar-row:nth-child(3) .bar-pct { animation-delay: 0.3s; }
-    .bar-row:nth-child(4) .bar-pct { animation-delay: 0.35s; }
-    .bar-row:nth-child(5) .bar-pct { animation-delay: 0.4s; }
-    .bar-row:nth-child(n+6) .bar-pct { animation-delay: 0.45s; }
-    
-    @keyframes slideInPct {
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    /* Status indicator */
+
     .status-indicator {
       display: inline-flex;
       align-items: center;
@@ -384,7 +336,7 @@
       color: var(--text-secondary);
       margin-top: 16px;
     }
-    
+
     .status-dot {
       width: 8px;
       height: 8px;
@@ -392,24 +344,23 @@
       background: var(--text-tertiary);
       animation: pulse 2s infinite;
     }
-    
+
     .status-dot.ok {
       background: var(--success);
       box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
     }
-    
+
     .status-dot.bad {
       background: var(--error);
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
     }
-    
-    /* Advanced settings */
+
     .advanced-toggle {
       margin-top: 24px;
       padding-top: 24px;
       border-top: 1px solid var(--border);
     }
-    
+
     .advanced-btn {
       background: none;
       border: none;
@@ -421,48 +372,27 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: color 0.2s ease;
+      transition: color var(--dur-fast) var(--ease-inout);
     }
-    
-    .advanced-btn:hover {
-      color: var(--accent);
-    }
-    
-    .advanced-btn::after {
-      content: '▼';
-      font-size: 10px;
-      transition: transform 0.3s ease;
-    }
-    
-    .advanced-btn.expanded::after {
-      transform: rotate(180deg);
-    }
-    
+    .advanced-btn:hover { color: var(--accent); }
+    .advanced-btn::after { content: '▼'; font-size: 10px; transition: transform var(--dur-med) var(--ease-inout); }
+    .advanced-btn.expanded::after { transform: rotate(180deg); }
+
     .advanced-panel {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease, opacity 0.3s ease;
+      transition: max-height var(--dur-med) var(--ease-inout), opacity var(--dur-med) var(--ease-inout);
       opacity: 0;
     }
-    
     .advanced-panel.visible {
       max-height: 1000px;
       opacity: 1;
       margin-top: 20px;
     }
-    
-    .advanced-section {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    
-    .advanced-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
+
+    .advanced-section { display: flex; flex-direction: column; gap: 16px; }
+    .advanced-row { display: flex; flex-direction: column; gap: 8px; }
+
     .advanced-label {
       font-size: 12px;
       font-weight: 500;
@@ -470,8 +400,8 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    
-    .advanced-input {
+
+    .advanced-input, select {
       padding: 10px 12px;
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
@@ -480,20 +410,16 @@
       font-size: 13px;
       font-family: inherit;
       outline: none;
-      transition: all 0.2s ease;
+      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout);
     }
-    
-    .advanced-input:focus {
+
+    .advanced-input:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px var(--accent-glow);
     }
-    
-    .advanced-buttons {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    
+
+    .advanced-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
     .btn-secondary {
       padding: 8px 16px;
       background: var(--bg-tertiary);
@@ -503,19 +429,11 @@
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background var(--dur-fast) var(--ease-inout), border-color var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
     }
-    
-    .btn-secondary:hover:not(:disabled) {
-      background: var(--bg-secondary);
-      border-color: var(--border-light);
-    }
-    
-    .btn-secondary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
+    .btn-secondary:hover:not(:disabled) { background: rgba(15, 15, 21, 0.9); border-color: var(--border-light); }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .stats-row {
       display: flex;
       gap: 16px;
@@ -524,104 +442,31 @@
       padding-top: 16px;
       border-top: 1px solid var(--border);
     }
-    
-    .stat-item {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-    
-    .stat-value {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-    
-    /* Examples panel */
-    .examples-panel {
-      margin-top: 20px;
-      display: none;
-    }
-    
-    .examples-panel.visible {
-      display: block;
-    }
-    
-    .examples-grid {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 12px;
-    }
-    
-    select {
-      padding: 10px 12px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    select:hover {
-      border-color: var(--border-light);
-    }
-    
-    select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-glow);
-    }
-    
+
+    .stat-item { font-size: 12px; color: var(--text-secondary); }
+    .stat-value { color: var(--text-primary); font-weight: 600; }
+
+    .examples-panel { margin-top: 20px; display: none; }
+    .examples-panel.visible { display: block; }
+    .examples-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+
+    .meta { margin-top: 12px; font-size: 12px; color: var(--text-tertiary); }
+    code { background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: var(--accent); font-family: 'Monaco', 'Courier New', monospace; }
+
     /* Animations */
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-    }
-    
-    /* Meta info */
-    .meta {
-      margin-top: 12px;
-      font-size: 12px;
-      color: var(--text-tertiary);
-    }
-    
-    code {
-      background: var(--bg-tertiary);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-      color: var(--accent);
-      font-family: 'Monaco', 'Courier New', monospace;
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+      .bar-fill::after { display: none; }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="header">
@@ -630,30 +475,33 @@
     </div>
 
     <div class="main-grid">
-      <div class="card results-card">
-        <div class="card-title">Predictions</div>
+      <div class="card results-card results-sticky">
+        <div class="results-head">
+          <div class="card-title" style="margin-bottom:0;">Predictions</div>
+          <div class="results-sub" id="resultsSub">—</div>
+        </div>
         <div class="bars" id="bars">
-          <div class="results-placeholder">Enter a tasting note to see predictions</div>
+          <div class="results-placeholder" id="placeholder">Enter a tasting note to see predictions</div>
         </div>
       </div>
+
       <div class="card input-card">
         <div class="card-title">Tasting Note</div>
         <textarea id="text" placeholder="e.g., black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
-        
+
         <div id="queueModeNotice" class="queue-notice">
           ⚠️ Rate limited: Real-time updates disabled. Use the button below to queue requests.
         </div>
-        
+
         <button id="requestBtn" class="request-btn">Request Prediction</button>
-        
+
         <div class="status-indicator">
           <span id="dot" class="status-dot"></span>
           <span id="statusText">Connecting...</span>
         </div>
-        
+
         <div class="meta" id="meta"></div>
-        
-        <!-- Advanced Settings -->
+
         <div class="advanced-toggle">
           <button id="advancedToggle" class="advanced-btn">Advanced Settings</button>
           <div id="advancedPanel" class="advanced-panel">
@@ -662,7 +510,7 @@
                 <label class="advanced-label">API Endpoint</label>
                 <input id="apiUrl" type="text" class="advanced-input" value="https://ectal-unbelievingly-shella.ngrok-free.dev/predict" />
               </div>
-              
+
               <div class="advanced-row">
                 <label class="advanced-label">Live Update Speed (ms)</label>
                 <input id="debounceDelay" type="number" class="advanced-input" value="150" min="50" max="1000" step="50" />
@@ -670,19 +518,19 @@
                   Lower = faster updates (50-1000ms)
                 </div>
               </div>
-              
+
               <div class="advanced-buttons">
                 <button id="pingBtn" class="btn-secondary">Test Connection</button>
                 <button id="loadExamplesBtn" class="btn-secondary">Load Examples</button>
               </div>
-              
+
               <div id="examplesPanel" class="examples-panel">
                 <div class="examples-grid">
                   <select id="categorySelect"></select>
                   <select id="exampleSelect"></select>
                 </div>
               </div>
-              
+
               <div class="stats-row">
                 <div class="stat-item">Client ID: <span class="stat-value" id="clientIdEl">-</span></div>
                 <div class="stat-item">Tokens: <span class="stat-value" id="tokensEl">-</span></div>
@@ -692,30 +540,53 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
   </div>
 
   <script>
-    // --- Debounce helper ---
-    let debounceTimer = null;
-    function debounce(fn) {
-      return (...args) => {
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => fn(...args), debounceDelay);
-      };
-    }
-    
-    function cancelDebounced() {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
+    // ---------------------------
+    // Mobile keyboard handling
+    // ---------------------------
+    (function setupKeyboardInset(){
+      const root = document.documentElement;
+      function updateInset() {
+        // VisualViewport is the most reliable on mobile for keyboard height inference.
+        if (!window.visualViewport) {
+          root.style.setProperty('--kb-inset', '0px');
+          return;
+        }
+        const vv = window.visualViewport;
+        // When keyboard opens, vv.height shrinks vs window.innerHeight.
+        const diff = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        root.style.setProperty('--kb-inset', diff + 'px');
       }
+      updateInset();
+      window.addEventListener('resize', updateInset);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateInset);
+        window.visualViewport.addEventListener('scroll', updateInset);
+      }
+    })();
+
+    // ---------------------------
+    // Debounce (per-function, no global timer collisions)
+    // ---------------------------
+    function makeDebounce(fn, getDelayMs) {
+      let t = null;
+      const wrapped = (...args) => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => fn(...args), getDelayMs());
+      };
+      wrapped.cancel = () => { if (t) clearTimeout(t); t = null; };
+      return wrapped;
     }
 
     // Elements
     const textEl = document.getElementById("text");
     const barsEl = document.getElementById("bars");
+    const placeholderEl = document.getElementById("placeholder");
     const apiUrlEl = document.getElementById("apiUrl");
     const metaEl = document.getElementById("meta");
     const statusText = document.getElementById("statusText");
@@ -734,36 +605,28 @@
     const advancedToggle = document.getElementById("advancedToggle");
     const advancedPanel = document.getElementById("advancedPanel");
     const debounceDelayEl = document.getElementById("debounceDelay");
-    
-    // Track real-time mode state
+    const resultsSub = document.getElementById("resultsSub");
+
     let realtimeEnabled = true;
     let pendingRequest = false;
     let advancedVisible = false;
-    let debounceDelay = 150; // Default faster speed
-    
-    // Load saved debounce delay
+
+    let debounceDelay = 150;
     const savedDelay = localStorage.getItem('qea_debounce_delay');
     if (savedDelay) {
-      debounceDelay = parseInt(savedDelay);
-      if (debounceDelayEl) {
-        debounceDelayEl.value = debounceDelay;
-      }
+      const n = parseInt(savedDelay, 10);
+      if (Number.isFinite(n)) debounceDelay = n;
     }
-    
-    // Update debounce delay when input changes
-    if (debounceDelayEl) {
-      debounceDelayEl.addEventListener('input', (e) => {
-        const value = parseInt(e.target.value);
-        if (value >= 50 && value <= 1000) {
-          debounceDelay = value;
-          localStorage.setItem('qea_debounce_delay', value);
-          // Recreate debounced function with new delay
-          predictDebounced = debounce(predictNow);
-        }
-      });
-    }
+    debounceDelayEl.value = debounceDelay;
 
-    // Advanced settings toggle
+    debounceDelayEl.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value, 10);
+      if (value >= 50 && value <= 1000) {
+        debounceDelay = value;
+        localStorage.setItem('qea_debounce_delay', String(value));
+      }
+    });
+
     advancedToggle.addEventListener('click', () => {
       advancedVisible = !advancedVisible;
       advancedToggle.classList.toggle('expanded', advancedVisible);
@@ -775,16 +638,16 @@
       dot.className = "status-dot " + (ok ? "ok" : "bad");
     }
 
-    // --- client id stored in localStorage ---
+    // client id
     let clientId = localStorage.getItem('qea_client_id');
     if (!clientId) {
       if (window.crypto && crypto.randomUUID) clientId = crypto.randomUUID();
-      else clientId = 'c-' + Math.random().toString(36).slice(2,12);
+      else clientId = 'c-' + Math.random().toString(36).slice(2, 12);
       localStorage.setItem('qea_client_id', clientId);
     }
     clientIdEl.textContent = clientId.substring(0, 8) + '...';
 
-    // --- small fetch helper with retries for transient HTML interstitials ---
+    // fetch helper
     async function fetchJsonWithRetry(url, opts = {}, retries = 2, backoff = 300) {
       let lastErr = null;
       for (let attempt = 0; attempt <= retries; attempt++) {
@@ -792,9 +655,9 @@
           const res = await fetch(url, opts);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const ct = res.headers.get('content-type') || '';
-          if (ct.indexOf('application/json') === -1) {
+          if (!ct.includes('application/json')) {
             const txt = await res.text();
-            throw new Error('non-json:' + txt.slice(0,200));
+            throw new Error('non-json:' + txt.slice(0, 200));
           }
           return await res.json();
         } catch (e) {
@@ -805,77 +668,174 @@
       throw lastErr;
     }
 
-    function renderBars(predictions) {
-      const entries = Object.entries(predictions).sort((a,b) => b[1] - a[1]);
-      barsEl.innerHTML = "";
-      
-      for (const [label, pct] of entries) {
-        const row = document.createElement("div");
-        row.className = "bar-row";
+    function examplesBaseUrl() {
+      const api = apiUrlEl.value.trim();
+      return api.replace(/\/predict\/?$/i, "").replace(/\/$/, "");
+    }
 
-        const labelEl = document.createElement("div");
-        labelEl.className = "bar-label";
-        labelEl.textContent = label;
+    // ---------------------------
+    // High-quality bars: keyed DOM + FLIP reorder + numeric interpolation
+    // ---------------------------
+    const rowByLabel = new Map(); // label -> {row, labelEl, fillEl, pctEl, lastPct}
+    let hasRenderedOnce = false;
 
-        const track = document.createElement("div");
-        track.className = "bar-track";
+    function formatPct(v) { return v.toFixed(1) + "%"; }
 
-        const fill = document.createElement("div");
-        fill.className = "bar-fill";
-        const finalWidth = Math.max(0, Math.min(100, pct));
-        // Start at 0, then animate to target width
-        fill.style.width = '0%';
-        // Use requestAnimationFrame to ensure DOM is ready, then animate
-        requestAnimationFrame(() => {
+    function tweenNumber(el, from, to, durationMs) {
+      if (!Number.isFinite(from)) from = 0;
+      if (!Number.isFinite(to)) to = 0;
+      const start = performance.now();
+      const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+      function step(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        const v = from + (to - from) * ease(t);
+        el.textContent = formatPct(v);
+        if (t < 1) requestAnimationFrame(step);
+        else el.textContent = formatPct(to);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function measurePositions() {
+      const positions = new Map();
+      for (const [label, obj] of rowByLabel.entries()) {
+        if (obj.row.isConnected) positions.set(label, obj.row.getBoundingClientRect());
+      }
+      return positions;
+    }
+
+    function applyFLIP(before) {
+      const after = measurePositions();
+      for (const [label, beforeRect] of before.entries()) {
+        const obj = rowByLabel.get(label);
+        if (!obj || !obj.row.isConnected) continue;
+        const afterRect = after.get(label);
+        if (!afterRect) continue;
+
+        const dx = beforeRect.left - afterRect.left;
+        const dy = beforeRect.top - afterRect.top;
+
+        if (dx || dy) {
+          obj.row.style.transform = `translate(${dx}px, ${dy}px)`;
+          obj.row.style.transition = 'transform 0ms';
+          // next frame: animate to 0
           requestAnimationFrame(() => {
-            fill.style.width = finalWidth + '%';
+            obj.row.style.transition = `transform var(--dur-med) var(--ease-inout)`;
+            obj.row.style.transform = 'translate(0, 0)';
           });
-        });
-
-        track.appendChild(fill);
-
-        const pctEl = document.createElement("div");
-        pctEl.className = "bar-pct";
-        // Animate percentage count-up
-        let currentPct = 0;
-        const targetPct = pct;
-        const duration = 800;
-        const startTime = Date.now();
-        
-        function animatePct() {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          // Easing function
-          const eased = progress < 0.5 
-            ? 2 * progress * progress 
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-          currentPct = targetPct * eased;
-          pctEl.textContent = currentPct.toFixed(1) + "%";
-          
-          if (progress < 1) {
-            requestAnimationFrame(animatePct);
-          } else {
-            pctEl.textContent = targetPct.toFixed(1) + "%";
-          }
         }
-        animatePct();
-
-        row.appendChild(labelEl);
-        row.appendChild(track);
-        row.appendChild(pctEl);
-        barsEl.appendChild(row);
       }
     }
 
+    function ensureRow(label) {
+      let obj = rowByLabel.get(label);
+      if (obj && obj.row.isConnected) return obj;
+
+      const row = document.createElement("div");
+      row.className = "bar-row " + (hasRenderedOnce ? "" : "enter");
+
+      const labelEl = document.createElement("div");
+      labelEl.className = "bar-label";
+      labelEl.textContent = label;
+
+      const track = document.createElement("div");
+      track.className = "bar-track";
+
+      const fill = document.createElement("div");
+      fill.className = "bar-fill";
+      fill.style.width = "0%";
+      track.appendChild(fill);
+
+      const pctEl = document.createElement("div");
+      pctEl.className = "bar-pct";
+      pctEl.textContent = "0.0%";
+
+      row.appendChild(labelEl);
+      row.appendChild(track);
+      row.appendChild(pctEl);
+
+      obj = { row, labelEl, fillEl: fill, pctEl, lastPct: 0 };
+      rowByLabel.set(label, obj);
+      return obj;
+    }
+
+    function renderBars(predictions, metaText) {
+      const entries = Object.entries(predictions || {}).sort((a,b) => b[1] - a[1]);
+
+      // Placeholder visibility
+      const hasData = entries.length > 0;
+      if (placeholderEl) placeholderEl.style.display = hasData ? "none" : "block";
+
+      // Measure before positions for FLIP
+      const before = measurePositions();
+
+      // Track labels present this render
+      const nextLabels = new Set(entries.map(([k]) => k));
+
+      // Create/update rows
+      for (const [label, pct] of entries) {
+        const obj = ensureRow(label);
+
+        // Append in new order (this reorders DOM)
+        barsEl.appendChild(obj.row);
+
+        // Update label text (stable, but safe)
+        obj.labelEl.textContent = label;
+
+        // Update bar width with CSS transition (interpolates smoothly)
+        const w = Math.max(0, Math.min(100, Number(pct) || 0));
+        obj.fillEl.style.width = w + "%";
+
+        // Smooth numeric interpolation without resetting to 0 each time
+        const from = obj.lastPct;
+        obj.lastPct = w;
+        tweenNumber(obj.pctEl, from, w, 520);
+      }
+
+      // Remove rows that disappeared
+      for (const [label, obj] of rowByLabel.entries()) {
+        if (!nextLabels.has(label) && obj.row.isConnected) {
+          obj.row.classList.add('exit');
+          // animate out then remove
+          requestAnimationFrame(() => {
+            obj.row.classList.add('final');
+            setTimeout(() => {
+              if (obj.row.isConnected) obj.row.remove();
+            }, 220);
+          });
+        }
+      }
+
+      // Apply FLIP shuffle animation if already rendered once
+      if (hasRenderedOnce) applyFLIP(before);
+
+      // For first render, trigger the "pop from zero" fill after rows exist
+      if (!hasRenderedOnce && hasData) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            // widths already set; CSS transitions will animate from 0%
+            // (rows were created with 0%, then updated in same tick above)
+          });
+        });
+      }
+
+      hasRenderedOnce = true;
+      resultsSub.textContent = metaText || "—";
+    }
+
+    // ---------------------------
+    // Predict
+    // ---------------------------
     async function predictNow() {
       if (pendingRequest) return;
-      
+
       const apiUrl = apiUrlEl.value.trim();
       const text = textEl.value.trim();
 
       if (!text) {
-        barsEl.innerHTML = "<div class='results-placeholder'>Enter text to see predictions.</div>";
+        renderBars({}, "");
         metaEl.textContent = "";
+        setStatus(false, "Idle");
         return;
       }
 
@@ -888,30 +848,26 @@
 
       const t0 = performance.now();
       try {
-        const res = await fetch(apiUrl, { 
-          method: "POST", 
-          headers: { 
-            "Content-Type": "application/json", 
-            "Accept": "application/json", 
-            "x-client-id": clientId 
-          }, 
-          body: JSON.stringify({ text }) 
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "x-client-id": clientId
+          },
+          body: JSON.stringify({ text })
         });
-        
+
         if (!res.ok) {
           const ct = res.headers.get('content-type') || '';
           let errorMsg = `HTTP ${res.status}`;
-          if (ct.indexOf('application/json') !== -1) {
-            try {
-              const errData = await res.json();
-              errorMsg = errData.detail || errorMsg;
-            } catch (e) {}
+          if (ct.includes('application/json')) {
+            try { const errData = await res.json(); errorMsg = errData.detail || errorMsg; } catch {}
           }
-          
+
           if (res.status === 429) {
             setStatus(false, "Rate limited");
             metaEl.textContent = `Rate limit: ${errorMsg}`;
-            cancelDebounced();
             realtimeEnabled = false;
             updateRealtimeMode();
             setTimeout(() => fetchStatus(), 500);
@@ -924,24 +880,25 @@
           }
           return;
         }
-        
+
         const ct = res.headers.get('content-type') || '';
-        if (ct.indexOf('application/json') === -1) {
+        if (!ct.includes('application/json')) {
           const txt = await res.text();
-          throw new Error('non-json:' + txt.slice(0,200));
+          throw new Error('non-json:' + txt.slice(0, 200));
         }
-        
+
         const data = await res.json();
         const dt = (performance.now() - t0).toFixed(0);
 
         setStatus(true, `Connected (${dt}ms)`);
         metaEl.textContent = `Device: ${data.device ?? "unknown"} • ${dt}ms`;
 
-        renderBars(data.predictions || {});
+        renderBars(data.predictions || {}, `${dt}ms • ${data.device ?? "unknown"}`);
         setTimeout(() => fetchStatus(), 500);
+
       } catch (e) {
         setStatus(false, "Error");
-        metaEl.textContent = String(e).slice(0,200);
+        metaEl.textContent = String(e).slice(0, 200);
         console.error('predictNow error', e);
       } finally {
         pendingRequest = false;
@@ -949,18 +906,22 @@
         requestBtn.textContent = "Request Prediction";
       }
     }
-    
-    let predictDebounced = debounce(predictNow);
+
+    const predictDebounced = makeDebounce(predictNow, () => debounceDelay);
 
     textEl.addEventListener("input", () => {
-      if (realtimeEnabled && !pendingRequest) {
-        predictDebounced();
-      }
+      if (realtimeEnabled && !pendingRequest) predictDebounced();
     });
-    
-    requestBtn.addEventListener("click", async () => {
-      await predictNow();
+
+    // Keep results visible when focusing textarea (especially on mobile)
+    textEl.addEventListener("focus", () => {
+      // small delay so keyboard/layout settles, then ensure results are still on screen
+      setTimeout(() => {
+        document.querySelector('.results-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }, 50);
     });
+
+    requestBtn.addEventListener("click", async () => { await predictNow(); });
 
     pingBtn.addEventListener("click", async () => {
       const prev = textEl.value;
@@ -969,19 +930,17 @@
       if (!prev.trim()) textEl.value = "";
     });
 
-    function examplesBaseUrl() {
-      const api = apiUrlEl.value.trim();
-      return api.replace(/\/predict\/?$/i, "").replace(/\/$/, "");
-    }
-
+    // ---------------------------
+    // Examples
+    // ---------------------------
     async function loadExamples() {
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const data = await fetchJsonWithRetry(url, { 
-          method: "POST", 
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" }, 
-          body: clientId 
+        const data = await fetchJsonWithRetry(url, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
+          body: clientId
         }, 2, 300);
 
         categorySelect.innerHTML = "";
@@ -1002,7 +961,7 @@
       } catch (e) {
         setStatus(false, "Examples load failed");
         console.error(e);
-        metaEl.textContent = String(e).slice(0,200);
+        metaEl.textContent = String(e).slice(0, 200);
       }
     }
 
@@ -1017,54 +976,64 @@
       }
     }
 
-    loadExamplesBtn.addEventListener('click', async () => {
-      await loadExamples();
-    });
+    loadExamplesBtn.addEventListener('click', async () => { await loadExamples(); });
 
     categorySelect.addEventListener('change', async () => {
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const data = await fetchJsonWithRetry(url, { 
-          method: "POST", 
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" }, 
-          body: clientId 
+        const data = await fetchJsonWithRetry(url, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
+          body: clientId
         }, 2, 300);
         populateExamplesFor(categorySelect.value, data);
       } catch (e) { console.error(e); }
     });
 
+    exampleSelect.addEventListener('change', () => {
+      const v = exampleSelect.value || '';
+      if (v) {
+        textEl.value = v;
+        if (realtimeEnabled && !pendingRequest) predictDebounced();
+        else predictNow();
+      }
+    });
+
+    // ---------------------------
+    // Status / realtime gating
+    // ---------------------------
     function updateRealtimeMode() {
       const tokens = parseInt(tokensEl.textContent) || 0;
       const queueLen = parseInt(queueEl.textContent) || 0;
       const shouldEnable = tokens > 0 && queueLen === 0;
-      
+
       if (shouldEnable !== realtimeEnabled) {
         realtimeEnabled = shouldEnable;
-        
+
         if (realtimeEnabled) {
           requestBtn.style.display = 'none';
           queueModeNotice.style.display = 'none';
-          if (textEl.value.trim() && !pendingRequest) {
-            predictDebounced();
-          }
+          predictDebounced.cancel();
+          if (textEl.value.trim() && !pendingRequest) predictDebounced();
         } else {
-          cancelDebounced();
+          predictDebounced.cancel();
           requestBtn.style.display = 'block';
           queueModeNotice.style.display = 'block';
         }
       }
     }
-    
+
     async function fetchStatus() {
       const base = examplesBaseUrl();
       const url = base + "/api/status";
       try {
-        const data = await fetchJsonWithRetry(url, { 
-          method: "POST", 
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" }, 
-          body: clientId 
+        const data = await fetchJsonWithRetry(url, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
+          body: clientId
         }, 2, 300);
+
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
@@ -1076,22 +1045,10 @@
       }
     }
 
-    fetchStatus().then(() => {
-      updateRealtimeMode();
-    });
+    // Initial
+    setStatus(false, "Connecting...");
+    fetchStatus().then(() => updateRealtimeMode());
     setInterval(fetchStatus, 5000);
-
-    exampleSelect.addEventListener('change', () => {
-      const v = exampleSelect.value || '';
-      if (v) {
-        textEl.value = v;
-        if (realtimeEnabled && !pendingRequest) {
-          predictDebounced();
-        } else {
-          predictNow();
-        }
-      }
-    });
   </script>
 </body>
 </html>
