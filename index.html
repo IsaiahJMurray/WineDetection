@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- viewport-fit=cover helps iOS safe-area; we will manage keyboard with VisualViewport -->
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Wine Classifier</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -20,22 +19,21 @@
       --text-secondary: #a0a0b0;
       --text-tertiary: #606070;
       --accent: #6366f1;
-      --accent-hover: #818cf8;
       --accent-glow: rgba(99, 102, 241, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
       --error: #ef4444;
       --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 
-      /* updated by JS */
       --kb-inset: 0px;
+      --header-h: 120px;
       --composer-h: 240px;
 
       --ease-out: cubic-bezier(0.2, 0.9, 0.2, 1);
       --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
-      --dur-fast: 180ms;
-      --dur-med: 420ms;
-      --dur-slow: 760ms;
+      --dur-fast: 160ms;
+      --dur-med: 360ms;
+      --dur-slow: 720ms;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,7 +47,6 @@
       overflow-x: hidden;
     }
 
-    /* Subtle background pattern */
     body::before {
       content: '';
       position: fixed;
@@ -61,6 +58,7 @@
       z-index: 0;
     }
 
+    /* Desktop container */
     .container {
       max-width: 1000px;
       margin: 0 auto;
@@ -69,7 +67,6 @@
       z-index: 1;
     }
 
-    /* Header */
     .header {
       text-align: center;
       margin-bottom: 40px;
@@ -83,7 +80,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       letter-spacing: -0.5px;
     }
 
@@ -93,7 +90,6 @@
       font-weight: 400;
     }
 
-    /* Main grid */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -105,12 +101,11 @@
       .main-grid { grid-template-columns: 1fr 1fr; }
     }
 
-    /* Cards */
     .card {
       background: rgba(15, 15, 21, 0.86);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 28px;
+      padding: 24px;
       backdrop-filter: blur(10px);
       transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout);
       position: relative;
@@ -128,7 +123,7 @@
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -142,9 +137,7 @@
       opacity: 0.9;
     }
 
-    /* Results */
-    .results-card { min-height: 320px; }
-
+    /* Results header row */
     .results-head {
       display: flex;
       align-items: center;
@@ -164,29 +157,29 @@
       color: var(--text-tertiary);
       font-size: 14px;
       text-align: center;
-      padding: 56px 16px;
+      padding: 52px 16px;
     }
 
+    /* Bars */
     .bars {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       position: relative;
     }
 
-    /* Bar rows: FLIP reorder */
+    /* Desktop row layout: label | bar | pct */
     .bar-row {
       display: grid;
-      grid-template-columns: minmax(110px, 160px) 1fr 70px;
+      grid-template-columns: minmax(130px, 170px) 1fr 74px;
       gap: 14px;
       align-items: center;
       will-change: transform;
       transform: translateZ(0);
     }
 
-    @media (max-width: 420px) {
-      .bar-row { grid-template-columns: 1fr; gap: 8px; }
-      .bar-pct { text-align: left; }
+    .bar-top {
+      display: contents; /* desktop: let label/pct take grid slots */
     }
 
     .bar-label {
@@ -233,14 +226,12 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Entry/exit animations without height changes */
+    /* Entry/exit animation (no height changes) */
     .enter {
       opacity: 0;
       transform: translateY(10px) scale(0.98);
       animation: popIn var(--dur-med) var(--ease-out) forwards;
     }
-
-    @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } }
 
     .exit {
       opacity: 1;
@@ -253,10 +244,15 @@
       transform: translateY(-6px) scale(0.98);
     }
 
+    @keyframes popIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
     /* Textarea */
     textarea {
       width: 100%;
-      min-height: 160px;
+      min-height: 170px;
       padding: 16px;
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
@@ -265,33 +261,38 @@
       font-size: 15px;
       font-family: inherit;
       line-height: 1.6;
-      resize: vertical;
       outline: none;
       transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), background var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
+      resize: vertical;
     }
 
     textarea::placeholder { color: var(--text-tertiary); }
-
     textarea:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-glow);
       background: rgba(15, 15, 21, 0.9);
     }
 
-    /* Lock state: prevents edits but allows scroll/copy */
-    textarea[readonly].locked {
-      opacity: 0.75;
-      cursor: not-allowed;
-    }
-    textarea[readonly].locked:focus {
-      border-color: var(--border);
-      box-shadow: none;
+    /* Lock state: prevent edits but allow scroll/copy */
+    textarea[readonly].locked { opacity: 0.75; cursor: not-allowed; }
+    textarea[readonly].locked:focus { border-color: var(--border); box-shadow: none; }
+
+    /* Queue notice */
+    .queue-notice {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+      color: var(--warning);
+      font-size: 13px;
+      display: none;
     }
 
     /* Request button */
     .request-btn {
-      margin-top: 16px;
-      padding: 12px 24px;
+      margin-top: 14px;
+      padding: 12px 18px;
       background: var(--gradient);
       border: none;
       border-radius: 10px;
@@ -301,37 +302,19 @@
       cursor: pointer;
       transition: transform var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
       display: none;
-      align-self: flex-start;
       box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
-    .request-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-    }
+    .request-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
     .request-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* Queue notice */
-    .queue-notice {
-      margin-top: 12px;
-      padding: 12px 16px;
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      border-radius: 10px;
-      color: var(--warning);
-      font-size: 13px;
-      display: none;
-      animation: slideIn 0.28s var(--ease-out);
-    }
-
-    /* Status indicator */
     .status-indicator {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       font-size: 12px;
       color: var(--text-secondary);
-      margin-top: 16px;
+      margin-top: 14px;
     }
 
     .status-dot {
@@ -344,10 +327,12 @@
     .status-dot.ok { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
     .status-dot.bad { background: var(--error); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 
-    /* Advanced settings */
+    .meta { margin-top: 10px; font-size: 12px; color: var(--text-tertiary); }
+
+    /* Advanced */
     .advanced-toggle {
-      margin-top: 24px;
-      padding-top: 24px;
+      margin-top: 20px;
+      padding-top: 18px;
       border-top: 1px solid var(--border);
     }
 
@@ -362,8 +347,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: color var(--dur-fast) var(--ease-inout);
     }
+
     .advanced-btn:hover { color: var(--accent); }
     .advanced-btn::after { content: '▼'; font-size: 10px; transition: transform var(--dur-med) var(--ease-inout); }
     .advanced-btn.expanded::after { transform: rotate(180deg); }
@@ -374,13 +359,10 @@
       transition: max-height var(--dur-med) var(--ease-inout), opacity var(--dur-med) var(--ease-inout);
       opacity: 0;
     }
-    .advanced-panel.visible {
-      max-height: 1000px;
-      opacity: 1;
-      margin-top: 20px;
-    }
 
-    .advanced-section { display: flex; flex-direction: column; gap: 16px; }
+    .advanced-panel.visible { max-height: 1000px; opacity: 1; margin-top: 16px; }
+
+    .advanced-section { display: flex; flex-direction: column; gap: 14px; }
     .advanced-row { display: flex; flex-direction: column; gap: 8px; }
 
     .advanced-label {
@@ -400,8 +382,8 @@
       font-size: 13px;
       font-family: inherit;
       outline: none;
-      transition: border-color var(--dur-fast) var(--ease-inout), box-shadow var(--dur-fast) var(--ease-inout);
     }
+
     .advanced-input:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px var(--accent-glow);
@@ -410,7 +392,7 @@
     .advanced-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .btn-secondary {
-      padding: 8px 16px;
+      padding: 8px 14px;
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -418,107 +400,145 @@
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      transition: background var(--dur-fast) var(--ease-inout), border-color var(--dur-fast) var(--ease-inout), opacity var(--dur-fast) var(--ease-inout);
     }
-    .btn-secondary:hover:not(:disabled) { background: rgba(15, 15, 21, 0.9); border-color: var(--border-light); }
-    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary:hover { border-color: var(--border-light); }
+
+    .examples-panel { margin-top: 10px; display: none; }
+    .examples-panel.visible { display: block; }
+    .examples-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
 
     .stats-row {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
-      margin-top: 16px;
-      padding-top: 16px;
+      margin-top: 10px;
+      padding-top: 12px;
       border-top: 1px solid var(--border);
     }
+
     .stat-item { font-size: 12px; color: var(--text-secondary); }
     .stat-value { color: var(--text-primary); font-weight: 600; }
 
-    .examples-panel { margin-top: 20px; display: none; }
-    .examples-panel.visible { display: block; }
-    .examples-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
-
-    /* Meta info */
-    .meta { margin-top: 12px; font-size: 12px; color: var(--text-tertiary); }
-
-    /* Animations */
-    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+      * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
       .bar-fill::after { display: none; }
     }
 
-    /* ---------------------------
-       Mobile "split view" layout:
-       Results on top, input fixed above keyboard.
-       This keeps BOTH visible during typing.
-       --------------------------- */
+    /* ----------------------------------------------------
+       MOBILE APP SHELL (no overlap; header/results/composer)
+       ---------------------------------------------------- */
     @media (max-width: 899px) {
       .container {
         max-width: 100%;
-        padding: 18px 16px;
+        padding: 0;
       }
 
-      .header { margin-bottom: 16px; }
-      .main-grid { display: block; }
+      /* Fixed header at top */
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        margin: 0;
+        padding: 16px 16px 12px;
+        background: rgba(10,10,15,0.92);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
 
-      /* Results: fixed, scrollable pane */
+      .header h1 { font-size: 24px; margin-bottom: 4px; }
+      .header p { font-size: 13px; }
+
+      /* Disable hover visuals on touch */
+      .card:hover { box-shadow: none; }
+
+      /* We do not use grid flow on mobile */
+      .main-grid { display: block; padding: 0; }
+
+      /* Results pane fixed between header and composer */
       .results-card {
         position: fixed;
-        left: 16px;
-        right: 16px;
-        top: calc(16px + 86px); /* header space; JS also measures composer height */
-        bottom: calc(16px + var(--composer-h) + var(--kb-inset) + env(safe-area-inset-bottom));
+        left: 12px;
+        right: 12px;
+        top: calc(8px + var(--header-h));
+        bottom: calc(12px + var(--composer-h) + var(--kb-inset) + env(safe-area-inset-bottom));
+        z-index: 10;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: 18px;
+        padding: 14px;
       }
 
-      /* Sticky results header inside scrolling pane */
       .results-head {
         position: sticky;
         top: 0;
-        padding: 10px 0 8px;
+        z-index: 12;
+        padding: 8px 0 10px;
         background: rgba(15, 15, 21, 0.92);
         backdrop-filter: blur(10px);
-        z-index: 2;
       }
 
-      /* Input composer: fixed above keyboard */
+      /* Composer fixed above keyboard */
       .input-card {
         position: fixed;
-        left: 16px;
-        right: 16px;
-        bottom: calc(16px + var(--kb-inset) + env(safe-area-inset-bottom));
-        padding: 18px;
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + var(--kb-inset) + env(safe-area-inset-bottom));
+        z-index: 20;
+        padding: 14px;
       }
 
       textarea {
-        min-height: 120px;
-        max-height: 28vh;
+        min-height: 96px;
+        max-height: 22vh;
         resize: none;
       }
 
-      /* Touch devices: remove hover shadow feel */
-      .card:hover { box-shadow: none; }
+      /* Mobile prediction layout: condensed & readable */
+      .bar-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 10px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(21, 21, 32, 0.55);
+      }
+
+      .bar-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .bar-label {
+        font-size: 13px;
+        max-width: 70%;
+      }
+
+      .bar-pct {
+        font-size: 13px;
+        text-align: right;
+      }
+
+      .bar-track { height: 10px; }
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <div class="header">
+    <div class="header" id="header">
       <h1>Wine Classifier</h1>
-      <p>Enter a wine tasting note to predict the variety</p>
+      <p>Enter a tasting note to predict the variety</p>
     </div>
 
     <div class="main-grid">
-      <div class="card results-card">
+      <div class="card results-card" id="resultsCard">
         <div class="results-head">
           <div class="card-title" style="margin-bottom:0;">Predictions</div>
           <div class="results-sub" id="resultsSub">—</div>
@@ -529,12 +549,12 @@
         </div>
       </div>
 
-      <div class="card input-card">
+      <div class="card input-card" id="composer">
         <div class="card-title">Tasting Note</div>
         <textarea id="text" placeholder="e.g., black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
 
         <div id="queueModeNotice" class="queue-notice">
-          ⚠️ Rate limited: Real-time updates disabled. Requests are queued. Editing is temporarily locked to prevent desync.
+          ⚠️ Rate limited: real-time updates disabled. Requests are queued; editing is temporarily locked.
         </div>
 
         <button id="requestBtn" class="request-btn">Request Prediction</button>
@@ -558,13 +578,10 @@
               <div class="advanced-row">
                 <label class="advanced-label">Live Update Speed (ms)</label>
                 <input id="debounceDelay" type="number" class="advanced-input" value="150" min="50" max="1000" step="50" />
-                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
-                  Lower = faster updates (50-1000ms)
-                </div>
               </div>
 
               <div class="advanced-buttons">
-                <button id="pingBtn" class="btn-secondary">Ping Connection</button>
+                <button id="pingBtn" class="btn-secondary">Ping</button>
                 <button id="loadExamplesBtn" class="btn-secondary">Load Examples</button>
               </div>
 
@@ -590,8 +607,20 @@
   </div>
 
   <script>
+    // ============================================================
+    // GUARANTEE: This file will NOT call /predict repeatedly without input.
+    //
+    // /predict is called ONLY by:
+    //   1) textarea "input" event (realtimeEnabled === true)
+    //   2) clicking "Request Prediction" (queue mode)
+    //   3) selecting an example (explicit user action)
+    //
+    // Ping uses /api/status ONLY and never triggers /predict.
+    // No setInterval polling exists.
+    // ============================================================
+
     // ---------------------------
-    // Keyboard inset (VisualViewport)
+    // VisualViewport keyboard inset
     // ---------------------------
     (function setupKeyboardInset(){
       const root = document.documentElement;
@@ -612,9 +641,6 @@
       }
     })();
 
-    // ---------------------------
-    // Debounce (per-function)
-    // ---------------------------
     function makeDebounce(fn, getDelayMs) {
       let t = null;
       const wrapped = (...args) => {
@@ -626,33 +652,53 @@
     }
 
     // Elements
+    const headerEl = document.getElementById("header");
+    const composerEl = document.getElementById("composer");
+
     const textEl = document.getElementById("text");
     const barsEl = document.getElementById("bars");
     const placeholderEl = document.getElementById("placeholder");
+
     const apiUrlEl = document.getElementById("apiUrl");
     const metaEl = document.getElementById("meta");
     const statusText = document.getElementById("statusText");
     const dot = document.getElementById("dot");
+    const resultsSub = document.getElementById("resultsSub");
+
     const pingBtn = document.getElementById("pingBtn");
     const loadExamplesBtn = document.getElementById("loadExamplesBtn");
     const examplesPanel = document.getElementById("examplesPanel");
     const categorySelect = document.getElementById("categorySelect");
     const exampleSelect = document.getElementById("exampleSelect");
+
     const clientIdEl = document.getElementById("clientIdEl");
     const tokensEl = document.getElementById("tokensEl");
     const queueEl = document.getElementById("queueEl");
     const usersHourEl = document.getElementById("usersHourEl");
+
     const requestBtn = document.getElementById("requestBtn");
     const queueModeNotice = document.getElementById("queueModeNotice");
+
     const advancedToggle = document.getElementById("advancedToggle");
     const advancedPanel = document.getElementById("advancedPanel");
     const debounceDelayEl = document.getElementById("debounceDelay");
-    const resultsSub = document.getElementById("resultsSub");
 
     // State
-    let realtimeEnabled = true;
     let pendingRequest = false;
     let advancedVisible = false;
+
+    // Realtime mode is enabled by default, but can be disabled on 429.
+    // We also update it opportunistically from /api/status responses.
+    let realtimeEnabled = true;
+
+    // Connectivity state: ping once, then avoid pings until "wake" events.
+    let isConnected = false;
+    let lastGoodAt = 0;
+    let lastActivityAt = Date.now();
+    const inactivityMs = 2 * 60 * 1000; // 2 minutes
+    let pingInFlight = false;
+
+    function markActivity() { lastActivityAt = Date.now(); }
 
     // Debounce delay
     let debounceDelay = 150;
@@ -671,12 +717,12 @@
       }
     });
 
-    // Advanced settings toggle
+    // Advanced toggle
     advancedToggle.addEventListener('click', () => {
       advancedVisible = !advancedVisible;
       advancedToggle.classList.toggle('expanded', advancedVisible);
       advancedPanel.classList.toggle('visible', advancedVisible);
-      setTimeout(updateComposerHeight, 0);
+      setTimeout(updateShellMeasurements, 0);
     });
 
     function setStatus(ok, msg) {
@@ -684,9 +730,7 @@
       dot.className = "status-dot " + (ok ? "ok" : "bad");
     }
 
-    // ---------------------------
     // Client id
-    // ---------------------------
     let clientId = localStorage.getItem('qea_client_id');
     if (!clientId) {
       if (window.crypto && crypto.randomUUID) clientId = crypto.randomUUID();
@@ -695,20 +739,25 @@
     }
     clientIdEl.textContent = clientId.substring(0, 8) + '...';
 
-    // ---------------------------
-    // Composer height measurement (for mobile split layout)
-    // ---------------------------
-    function updateComposerHeight() {
-      const el = document.querySelector('.input-card');
-      const h = el ? el.getBoundingClientRect().height : 240;
-      document.documentElement.style.setProperty('--composer-h', Math.ceil(h) + 'px');
-    }
-    updateComposerHeight();
-    window.addEventListener('resize', updateComposerHeight);
+    // Measure header and composer so mobile panes never overlap
+    function updateShellMeasurements() {
+      const root = document.documentElement;
 
-    // ---------------------------
-    // Input lock while queued (prevents edits)
-    // ---------------------------
+      const headerH = headerEl ? headerEl.getBoundingClientRect().height : 120;
+      root.style.setProperty('--header-h', Math.ceil(headerH) + 'px');
+
+      const composerH = composerEl ? composerEl.getBoundingClientRect().height : 240;
+      root.style.setProperty('--composer-h', Math.ceil(composerH) + 'px');
+    }
+
+    // call often on layout-affecting events
+    updateShellMeasurements();
+    window.addEventListener('resize', updateShellMeasurements);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateShellMeasurements);
+    }
+
+    // Input lock (queue mode)
     function setInputLocked(locked, reason) {
       textEl.readOnly = locked;
       textEl.classList.toggle('locked', locked);
@@ -722,7 +771,7 @@
       }
     }
 
-    // Extra hardening for browsers that can still fire input events
+    // Harden readonly
     textEl.addEventListener('beforeinput', (e) => {
       if (textEl.readOnly) e.preventDefault();
     });
@@ -732,10 +781,8 @@
       if (block) e.preventDefault();
     });
 
-    // ---------------------------
     // Fetch helper
-    // ---------------------------
-    async function fetchJsonWithRetry(url, opts = {}, retries = 2, backoff = 250) {
+    async function fetchJsonWithRetry(url, opts = {}, retries = 1, backoff = 200) {
       let lastErr = null;
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
@@ -755,18 +802,21 @@
       throw lastErr;
     }
 
-    function examplesBaseUrl() {
+    function baseUrl() {
       const api = apiUrlEl.value.trim();
       return api.replace(/\/predict\/?$/i, "").replace(/\/$/, "");
     }
 
     // ---------------------------
-    // Connectivity ping (auto + button)
-    // Uses POST /api/status (body=clientId) to avoid custom headers/preflight quirks.
+    // Ping (/api/status) once, then only on "wake" events / failures / manual ping.
+    // Does NOT call /predict. Does NOT schedule polling.
     // ---------------------------
-    async function pingConnectivity() {
-      const base = examplesBaseUrl();
-      const url = base + "/api/status";
+    async function pingConnectivityIfNeeded(force = false) {
+      if (!force && isConnected) return true;
+      if (pingInFlight) return false;
+      pingInFlight = true;
+
+      const url = baseUrl() + "/api/status";
       const t0 = performance.now();
 
       try {
@@ -777,37 +827,106 @@
         }, 1, 200);
 
         const dt = Math.round(performance.now() - t0);
+
+        isConnected = true;
+        lastGoodAt = Date.now();
+
         setStatus(true, `Connected (${dt}ms)`);
         metaEl.textContent = `Status OK • ${dt}ms`;
         resultsSub.textContent = `${dt}ms • status`;
 
+        // opportunistic stats (no polling)
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
 
-        updateRealtimeMode();
+        // Update realtime vs queue mode based on returned tokens/queue
+        applyRateModeFromStatus(data.tokens, data.queue_len);
+
+        setTimeout(updateShellMeasurements, 0);
         return true;
       } catch (e) {
+        isConnected = false;
         setStatus(false, "Disconnected");
         metaEl.textContent = `Ping failed: ${String(e).slice(0, 120)}`;
         resultsSub.textContent = `offline`;
-        // In offline state, do NOT force queue mode UI; just keep manual request visible if needed.
+
+        // Offer manual reconnect without any background work
         requestBtn.style.display = 'block';
         requestBtn.textContent = 'Reconnect';
         queueModeNotice.style.display = 'none';
         setInputLocked(false);
+
+        setTimeout(updateShellMeasurements, 0);
         return false;
+      } finally {
+        pingInFlight = false;
       }
     }
 
+    function maybePingOnWake() {
+      const now = Date.now();
+      const inactiveFor = now - lastActivityAt;
+      const staleFor = now - lastGoodAt;
+
+      const shouldPing = !isConnected || inactiveFor > inactivityMs || staleFor > 10 * 60 * 1000;
+      if (shouldPing) pingConnectivityIfNeeded(true);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') maybePingOnWake();
+    });
+
+    window.addEventListener('offline', () => {
+      isConnected = false;
+      setStatus(false, "Offline");
+      resultsSub.textContent = "offline";
+    });
+
+    window.addEventListener('online', () => {
+      pingConnectivityIfNeeded(true);
+    });
+
+    ['pointerdown','keydown','touchstart','focus'].forEach(evt => {
+      window.addEventListener(evt, markActivity, { passive: true });
+    });
+
     pingBtn.addEventListener("click", async () => {
-      await pingConnectivity();
+      await pingConnectivityIfNeeded(true);
+    });
+
+    // If API URL changes, reset connectivity and allow a fresh ping (still not polling)
+    apiUrlEl.addEventListener('change', () => {
+      isConnected = false;
+      pingConnectivityIfNeeded(true);
     });
 
     // ---------------------------
-    // High-quality bars: keyed DOM + FLIP reorder + numeric interpolation
+    // Rate-mode UI (realtime vs queue)
     // ---------------------------
-    const rowByLabel = new Map(); // label -> {row, labelEl, fillEl, pctEl, lastPct}
+    function applyRateModeFromStatus(tokens, queueLen) {
+      // Realtime enabled only when tokens available and no backlog
+      const shouldEnable = (parseInt(tokens, 10) > 0) && (parseInt(queueLen, 10) === 0);
+
+      realtimeEnabled = shouldEnable;
+
+      if (realtimeEnabled) {
+        requestBtn.style.display = 'none';
+        queueModeNotice.style.display = 'none';
+        setInputLocked(false);
+      } else {
+        requestBtn.style.display = 'block';
+        requestBtn.textContent = 'Request Prediction';
+        queueModeNotice.style.display = 'block';
+        setInputLocked(true, "waiting in queue");
+      }
+    }
+
+    // ---------------------------
+    // Bars: keyed DOM + FLIP reorder + numeric interpolation
+    // Mobile uses condensed card rows; Desktop uses columns.
+    // ---------------------------
+    const rowByLabel = new Map();
     let hasRenderedOnce = false;
 
     function isMobile() { return window.matchMedia('(max-width: 899px)').matches; }
@@ -842,13 +961,11 @@
       for (const [label, beforeRect] of before.entries()) {
         const obj = rowByLabel.get(label);
         if (!obj || !obj.row.isConnected) continue;
-
         const afterRect = after.get(label);
         if (!afterRect) continue;
 
         const dx = beforeRect.left - afterRect.left;
         const dy = beforeRect.top - afterRect.top;
-
         if (dx || dy) {
           obj.row.style.transform = `translate(${dx}px, ${dy}px)`;
           obj.row.style.transition = 'transform 0ms';
@@ -867,9 +984,20 @@
       const row = document.createElement("div");
       row.className = "bar-row " + (hasRenderedOnce ? "" : "enter");
 
+      // top line: label + pct (mobile shows as flex, desktop uses contents)
+      const top = document.createElement("div");
+      top.className = "bar-top";
+
       const labelEl = document.createElement("div");
       labelEl.className = "bar-label";
       labelEl.textContent = label;
+
+      const pctEl = document.createElement("div");
+      pctEl.className = "bar-pct";
+      pctEl.textContent = "0.0%";
+
+      top.appendChild(labelEl);
+      top.appendChild(pctEl);
 
       const track = document.createElement("div");
       track.className = "bar-track";
@@ -879,13 +1007,8 @@
       fill.style.width = "0%";
       track.appendChild(fill);
 
-      const pctEl = document.createElement("div");
-      pctEl.className = "bar-pct";
-      pctEl.textContent = "0.0%";
-
-      row.appendChild(labelEl);
+      row.appendChild(top);
       row.appendChild(track);
-      row.appendChild(pctEl);
 
       obj = { row, labelEl, fillEl: fill, pctEl, lastPct: 0 };
       rowByLabel.set(label, obj);
@@ -895,7 +1018,7 @@
     function renderBars(predictions, metaText) {
       let entries = Object.entries(predictions || {}).sort((a,b) => b[1] - a[1]);
 
-      // Keep mobile stable by capping visible rows (reduces scroll-height jump while typing)
+      // Keep mobile stable/readable: cap to top 6
       if (isMobile()) entries = entries.slice(0, 6);
 
       const hasData = entries.length > 0;
@@ -916,15 +1039,12 @@
         tweenNumber(obj.pctEl, from, w, 520);
       }
 
-      // Animate out rows not in next set (no reflow-jank; opacity/transform only)
       for (const [label, obj] of rowByLabel.entries()) {
         if (!nextLabels.has(label) && obj.row.isConnected) {
           obj.row.classList.add('exit');
           requestAnimationFrame(() => {
             obj.row.classList.add('final');
-            setTimeout(() => {
-              if (obj.row.isConnected) obj.row.remove();
-            }, 220);
+            setTimeout(() => { if (obj.row.isConnected) obj.row.remove(); }, 220);
           });
         }
       }
@@ -933,6 +1053,7 @@
       hasRenderedOnce = true;
 
       if (metaText) resultsSub.textContent = metaText;
+      setTimeout(updateShellMeasurements, 0);
     }
 
     // ---------------------------
@@ -953,7 +1074,7 @@
       pendingRequest = true;
       requestBtn.disabled = true;
 
-      // If we're in queue mode, lock edits immediately to prevent desync
+      // If in queue mode, lock edits while waiting for server response
       if (!realtimeEnabled) {
         setInputLocked(true, "waiting in queue");
         setStatus(false, "Waiting in queue...");
@@ -974,24 +1095,34 @@
         });
 
         if (!res.ok) {
-          const ct = res.headers.get('content-type') || '';
+          // if backend says rate limited, switch to queue mode
           let errorMsg = `HTTP ${res.status}`;
-          if (ct.includes('application/json')) {
-            try { const errData = await res.json(); errorMsg = errData.detail || errorMsg; } catch {}
-          }
+          try {
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+              const errData = await res.json();
+              if (errData?.detail) errorMsg = errData.detail;
+            }
+          } catch {}
 
           if (res.status === 429) {
+            realtimeEnabled = false;
             setStatus(false, "Rate limited");
             metaEl.textContent = `Rate limit: ${errorMsg}`;
-            realtimeEnabled = false;
-            updateRealtimeMode();
+            queueModeNotice.style.display = 'block';
+            requestBtn.style.display = 'block';
+            requestBtn.textContent = 'Request Prediction';
+            setInputLocked(true, "waiting in queue");
           } else if (res.status === 413) {
             setStatus(false, "Request too long");
-            metaEl.textContent = `Request too long: ${errorMsg}`;
+            metaEl.textContent = errorMsg;
           } else {
             setStatus(false, `Error ${res.status}`);
             metaEl.textContent = errorMsg;
           }
+
+          // Treat failures as potential connectivity issue; allow a wake ping next time
+          isConnected = false;
           return;
         }
 
@@ -1004,45 +1135,58 @@
         const data = await res.json();
         const dt = Math.round(performance.now() - t0);
 
+        // Successful predict implies connected
+        isConnected = true;
+        lastGoodAt = Date.now();
+
         setStatus(true, `Connected (${dt}ms)`);
         metaEl.textContent = `Device: ${data.device ?? "unknown"} • ${dt}ms`;
-
         renderBars(data.predictions || {}, `${dt}ms • ${data.device ?? "unknown"}`);
 
-        // Refresh status shortly after a prediction
-        setTimeout(() => fetchStatus(), 400);
+        // Optional, opportunistic status refresh AFTER a prediction only (not polling)
+        // This does not trigger /predict.
+        pingConnectivityIfNeeded(true);
 
       } catch (e) {
         setStatus(false, "Error");
         metaEl.textContent = String(e).slice(0, 200);
-        console.error('predictNow error', e);
+        isConnected = false; // next wake interaction can ping status
+        console.error(e);
       } finally {
         pendingRequest = false;
         requestBtn.disabled = false;
-        requestBtn.textContent = "Request Prediction";
 
-        // Keep locked if still queued, otherwise unlock
-        setInputLocked(!realtimeEnabled, !realtimeEnabled ? "waiting in queue" : "");
+        if (!realtimeEnabled) {
+          requestBtn.textContent = "Request Prediction";
+          setInputLocked(true, "waiting in queue");
+        } else {
+          requestBtn.textContent = "Request Prediction";
+          setInputLocked(false);
+        }
       }
     }
 
     const predictDebounced = makeDebounce(predictNow, () => debounceDelay);
 
+    // Predict triggers ONLY on user input (realtime mode)
     textEl.addEventListener("input", () => {
+      markActivity();
+      maybePingOnWake(); // ping status only if stale/offline; never calls /predict
       if (realtimeEnabled && !pendingRequest) predictDebounced();
     });
 
+    // In queue mode / offline reconnect, button is explicit user action
     requestBtn.addEventListener("click", async () => {
-      // If we are offline and button says Reconnect, do that
+      markActivity();
       if (requestBtn.textContent === 'Reconnect') {
-        await pingConnectivity();
+        await pingConnectivityIfNeeded(true);
         return;
       }
       await predictNow();
     });
 
     // ---------------------------
-    // Examples
+    // Examples (explicit user action)
     // ---------------------------
     function populateExamplesFor(category, data) {
       const arr = data[category] || [];
@@ -1056,14 +1200,13 @@
     }
 
     async function loadExamples() {
-      const base = examplesBaseUrl();
-      const url = base + "/api/examples";
+      const url = baseUrl() + "/api/examples";
       try {
         const data = await fetchJsonWithRetry(url, {
           method: "POST",
           headers: { "Content-Type": "text/plain", "Accept": "application/json" },
           body: clientId
-        }, 2, 300);
+        }, 2, 250);
 
         categorySelect.innerHTML = "";
         for (const k of Object.keys(data)) {
@@ -1080,114 +1223,44 @@
 
         examplesPanel.classList.add('visible');
         setStatus(true, "Examples loaded");
-        setTimeout(updateComposerHeight, 0);
+        setTimeout(updateShellMeasurements, 0);
       } catch (e) {
         setStatus(false, "Examples load failed");
-        console.error(e);
         metaEl.textContent = String(e).slice(0, 200);
       }
     }
 
     loadExamplesBtn.addEventListener('click', async () => {
+      markActivity();
+      maybePingOnWake();
       await loadExamples();
     });
 
     categorySelect.addEventListener('change', async () => {
-      const base = examplesBaseUrl();
-      const url = base + "/api/examples";
-      try {
-        const data = await fetchJsonWithRetry(url, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
-          body: clientId
-        }, 2, 300);
-        populateExamplesFor(categorySelect.value, data);
-        setTimeout(updateComposerHeight, 0);
-      } catch (e) { console.error(e); }
+      markActivity();
+      maybePingOnWake();
+      // reload examples data once (still explicit interaction)
+      await loadExamples();
     });
 
     exampleSelect.addEventListener('change', () => {
+      markActivity();
+      maybePingOnWake();
       const v = exampleSelect.value || '';
       if (v) {
         textEl.value = v;
-
-        if (realtimeEnabled && !pendingRequest) {
-          predictDebounced();
-        } else {
-          predictNow();
-        }
+        // This is explicit user action -> OK to run predict once.
+        if (realtimeEnabled && !pendingRequest) predictDebounced();
+        else predictNow();
       }
     });
 
     // ---------------------------
-    // Realtime / queue mode gating
-    // ---------------------------
-    function updateRealtimeMode() {
-      const tokens = parseInt(tokensEl.textContent) || 0;
-      const queueLen = parseInt(queueEl.textContent) || 0;
-
-      // Realtime only when tokens available and no queue backlog
-      const shouldEnable = tokens > 0 && queueLen === 0;
-
-      if (shouldEnable !== realtimeEnabled) {
-        realtimeEnabled = shouldEnable;
-      }
-
-      if (realtimeEnabled) {
-        requestBtn.style.display = 'none';
-        queueModeNotice.style.display = 'none';
-        setInputLocked(false);
-
-        // If the user already typed and we're idle, run a debounced prediction
-        if (textEl.value.trim() && !pendingRequest) predictDebounced();
-      } else {
-        predictDebounced.cancel();
-        requestBtn.style.display = 'block';
-        queueModeNotice.style.display = 'block';
-
-        // Lock input while queued to prevent user edits while their queued request is outstanding
-        setInputLocked(true, "waiting in queue");
-      }
-
-      setTimeout(updateComposerHeight, 0);
-    }
-
-    async function fetchStatus() {
-      const base = examplesBaseUrl();
-      const url = base + "/api/status";
-      try {
-        const data = await fetchJsonWithRetry(url, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain", "Accept": "application/json" },
-          body: clientId
-        }, 1, 200);
-
-        tokensEl.textContent = data.tokens;
-        queueEl.textContent = data.queue_len;
-        usersHourEl.textContent = data.users_past_hour;
-
-        updateRealtimeMode();
-      } catch (e) {
-        console.error('fetchStatus failed', e);
-        tokensEl.textContent = 'ERR';
-        queueEl.textContent = '-';
-        // do not force queue lock here; treat as connectivity issue
-      }
-    }
-
-    // ---------------------------
-    // Init: auto-ping connectivity, then status polling
+    // INIT: one-shot ping on load, then no polling.
     // ---------------------------
     setStatus(false, "Connecting...");
-    pingConnectivity();     // auto ping without requiring user input
-    fetchStatus();          // populate token/queue stats quickly
-    setInterval(fetchStatus, 5000);
-
-    // If API URL changes, re-ping quickly
-    apiUrlEl.addEventListener('change', () => {
-      pingConnectivity();
-      fetchStatus();
-    });
+    pingConnectivityIfNeeded(true); // uses /api/status only
+    updateShellMeasurements();
   </script>
 </body>
 </html>
