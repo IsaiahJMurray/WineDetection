@@ -141,6 +141,28 @@
       try { await navigator.clipboard.writeText(clientId); } catch (e) { /* ignore */ }
     });
 
+    // --- small fetch helper with retries for transient HTML interstitials ---
+    async function fetchJsonWithRetry(url, opts = {}, retries = 2, backoff = 300) {
+      let lastErr = null;
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch(url, opts);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const ct = res.headers.get('content-type') || '';
+          if (ct.indexOf('application/json') === -1) {
+            const txt = await res.text();
+            throw new Error('non-json:' + txt.slice(0,200));
+          }
+          return await res.json();
+        } catch (e) {
+          lastErr = e;
+          // small delay before retrying
+          if (attempt < retries) await new Promise(r => setTimeout(r, backoff * (attempt + 1)));
+        }
+      }
+      throw lastErr;
+    }
+
     function renderBars(predictions) {
       // Sort by probability desc
       const entries = Object.entries(predictions).sort((a,b) => b[1] - a[1]);
@@ -187,40 +209,20 @@
 
       const t0 = performance.now();
       try {
-        const res = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Accept": "application/json", "x-client-id": clientId },
-          body: JSON.stringify({ text })
-        });
+        try {
+          const data = await fetchJsonWithRetry(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json", "x-client-id": clientId }, body: JSON.stringify({ text }) }, 2, 300);
+          const dt = (performance.now() - t0).toFixed(0);
 
-        if (!res.ok) {
-          const errText = await res.text();
-          setStatus(false, `HTTP ${res.status}`);
-          metaEl.textContent = errText.slice(0, 200);
+          setStatus(true, `OK (${dt} ms)`);
+          metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
+
+          renderBars(data.predictions || {});
+        } catch (e) {
+          setStatus(false, "Disconnected");
+          metaEl.textContent = String(e).slice(0,200);
+          console.error('predictNow error', e);
           return;
         }
-
-        const ct = res.headers.get('content-type') || '';
-        if (ct.indexOf('application/json') === -1) {
-          // non-JSON response (ngrok interstitial or other HTML)
-          const txt = await res.text();
-          setStatus(false, 'Bad response');
-          metaEl.textContent = 'Non-JSON response from server; see console.';
-          console.warn('predict returned non-JSON:', txt.slice(0,400));
-          return;
-        }
-
-        const data = await res.json();
-        const dt = (performance.now() - t0).toFixed(0);
-
-        setStatus(true, `OK (${dt} ms)`);
-        metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
-
-        renderBars(data.predictions || {});
-      } catch (e) {
-        setStatus(false, "Disconnected");
-        metaEl.textContent = String(e).slice(0,200);
-        console.error('predictNow error', e);
       }
     }
 
@@ -247,17 +249,7 @@
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const res = await fetch(url, { headers: { "Accept": "application/json", "x-client-id": clientId } });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const ct = res.headers.get('content-type') || '';
-        if (ct.indexOf('application/json') === -1) {
-          const txt = await res.text();
-          console.warn('examples returned non-JSON:', txt.slice(0,300));
-          throw new Error('Examples endpoint returned non-JSON response');
-        }
-
-        const data = await res.json();
+        const data = await fetchJsonWithRetry(url, { headers: { "Accept": "application/json", "x-client-id": clientId } }, 2, 300);
 
         // populate category select
         categorySelect.innerHTML = "";
@@ -321,27 +313,7 @@
       const base = examplesBaseUrl();
       const url = base + "/api/status";
       try {
-        const res = await fetch(url, { headers: { "Accept": "application/json", "x-client-id": clientId } });
-        if (!res.ok) {
-          console.warn('status fetch returned', res.status);
-          tokensEl.textContent = 'ERR';
-          queueEl.textContent = '-';
-          return;
-        }
-
-        const ct = res.headers.get('content-type') || '';
-        if (ct.indexOf('application/json') === -1) {
-          // non-json response (likely an HTML error/interstitial from ngrok)
-          const txt = await res.text();
-          console.warn('status endpoint returned non-JSON:', txt.slice(0,300));
-          tokensEl.textContent = 'ERR';
-          queueEl.textContent = '-';
-          // surface a short message to meta for debugging
-          metaEl.textContent = 'Status endpoint returned non-JSON response (see console).';
-          return;
-        }
-
-        const data = await res.json();
+        const data = await fetchJsonWithRetry(url, { headers: { "Accept": "application/json", "x-client-id": clientId } }, 2, 300);
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
