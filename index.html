@@ -200,6 +200,16 @@
           return;
         }
 
+        const ct = res.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) {
+          // non-JSON response (ngrok interstitial or other HTML)
+          const txt = await res.text();
+          setStatus(false, 'Bad response');
+          metaEl.textContent = 'Non-JSON response from server; see console.';
+          console.warn('predict returned non-JSON:', txt.slice(0,400));
+          return;
+        }
+
         const data = await res.json();
         const dt = (performance.now() - t0).toFixed(0);
 
@@ -209,7 +219,8 @@
         renderBars(data.predictions || {});
       } catch (e) {
         setStatus(false, "Disconnected");
-        metaEl.textContent = String(e);
+        metaEl.textContent = String(e).slice(0,200);
+        console.error('predictNow error', e);
       }
     }
 
@@ -238,6 +249,14 @@
       try {
         const res = await fetch(url, { headers: { "x-client-id": clientId } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const ct = res.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) {
+          const txt = await res.text();
+          console.warn('examples returned non-JSON:', txt.slice(0,300));
+          throw new Error('Examples endpoint returned non-JSON response');
+        }
+
         const data = await res.json();
 
         // populate category select
@@ -260,6 +279,7 @@
       } catch (e) {
         setStatus(false, "Examples load failed");
         console.error(e);
+        metaEl.textContent = String(e).slice(0,200);
       }
     }
 
@@ -284,6 +304,13 @@
       const url = base + "/api/examples";
       try {
         const res = await fetch(url, { headers: { "x-client-id": clientId } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const ct = res.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) {
+          const txt = await res.text();
+          console.warn('examples(change) returned non-JSON:', txt.slice(0,300));
+          throw new Error('Examples endpoint returned non-JSON response');
+        }
         const data = await res.json();
         populateExamplesFor(categorySelect.value, data);
       } catch (e) { console.error(e); }
