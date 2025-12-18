@@ -261,6 +261,23 @@
       grid-template-columns: 140px 1fr 70px;
       gap: 16px;
       align-items: center;
+      opacity: 0;
+      transform: translateX(-20px);
+      animation: slideInBar 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .bar-row:nth-child(1) { animation-delay: 0.05s; }
+    .bar-row:nth-child(2) { animation-delay: 0.1s; }
+    .bar-row:nth-child(3) { animation-delay: 0.15s; }
+    .bar-row:nth-child(4) { animation-delay: 0.2s; }
+    .bar-row:nth-child(5) { animation-delay: 0.25s; }
+    .bar-row:nth-child(n+6) { animation-delay: 0.3s; }
+    
+    @keyframes slideInBar {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
     
     .bar-label {
@@ -270,6 +287,21 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      opacity: 0;
+      animation: fadeInText 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .bar-row:nth-child(1) .bar-label { animation-delay: 0.1s; }
+    .bar-row:nth-child(2) .bar-label { animation-delay: 0.15s; }
+    .bar-row:nth-child(3) .bar-label { animation-delay: 0.2s; }
+    .bar-row:nth-child(4) .bar-label { animation-delay: 0.25s; }
+    .bar-row:nth-child(5) .bar-label { animation-delay: 0.3s; }
+    .bar-row:nth-child(n+6) .bar-label { animation-delay: 0.35s; }
+    
+    @keyframes fadeInText {
+      to {
+        opacity: 1;
+      }
     }
     
     .bar-track {
@@ -284,8 +316,27 @@
       height: 100%;
       background: var(--gradient);
       border-radius: 999px;
-      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
       box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+      position: relative;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      animation: shimmer 3s infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
     }
     
     .bar-pct {
@@ -294,6 +345,23 @@
       color: var(--text-secondary);
       text-align: right;
       font-variant-numeric: tabular-nums;
+      opacity: 0;
+      transform: translateX(10px);
+      animation: slideInPct 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .bar-row:nth-child(1) .bar-pct { animation-delay: 0.2s; }
+    .bar-row:nth-child(2) .bar-pct { animation-delay: 0.25s; }
+    .bar-row:nth-child(3) .bar-pct { animation-delay: 0.3s; }
+    .bar-row:nth-child(4) .bar-pct { animation-delay: 0.35s; }
+    .bar-row:nth-child(5) .bar-pct { animation-delay: 0.4s; }
+    .bar-row:nth-child(n+6) .bar-pct { animation-delay: 0.45s; }
+    
+    @keyframes slideInPct {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
     
     /* Status indicator */
@@ -579,6 +647,14 @@
                 <input id="apiUrl" type="text" class="advanced-input" value="https://ectal-unbelievingly-shella.ngrok-free.dev/predict" />
               </div>
               
+              <div class="advanced-row">
+                <label class="advanced-label">Live Update Speed (ms)</label>
+                <input id="debounceDelay" type="number" class="advanced-input" value="150" min="50" max="1000" step="50" />
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                  Lower = faster updates (50-1000ms)
+                </div>
+              </div>
+              
               <div class="advanced-buttons">
                 <button id="pingBtn" class="btn-secondary">Test Connection</button>
                 <button id="loadExamplesBtn" class="btn-secondary">Load Examples</button>
@@ -615,10 +691,10 @@
   <script>
     // --- Debounce helper ---
     let debounceTimer = null;
-    function debounce(fn, delayMs) {
+    function debounce(fn) {
       return (...args) => {
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => fn(...args), delayMs);
+        debounceTimer = setTimeout(() => fn(...args), debounceDelay);
       };
     }
     
@@ -627,6 +703,22 @@
         clearTimeout(debounceTimer);
         debounceTimer = null;
       }
+    }
+    
+    // Update debounce delay when input changes
+    debounceDelayEl.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value);
+      if (value >= 50 && value <= 1000) {
+        debounceDelay = value;
+        localStorage.setItem('qea_debounce_delay', value);
+      }
+    });
+    
+    // Load saved debounce delay
+    const savedDelay = localStorage.getItem('qea_debounce_delay');
+    if (savedDelay) {
+      debounceDelay = parseInt(savedDelay);
+      debounceDelayEl.value = debounceDelay;
     }
 
     // Elements
@@ -649,11 +741,13 @@
     const queueModeNotice = document.getElementById("queueModeNotice");
     const advancedToggle = document.getElementById("advancedToggle");
     const advancedPanel = document.getElementById("advancedPanel");
+    const debounceDelayEl = document.getElementById("debounceDelay");
     
     // Track real-time mode state
     let realtimeEnabled = true;
     let pendingRequest = false;
     let advancedVisible = false;
+    let debounceDelay = 150; // Default faster speed
 
     // Advanced settings toggle
     advancedToggle.addEventListener('click', () => {
@@ -714,13 +808,43 @@
 
         const fill = document.createElement("div");
         fill.className = "bar-fill";
-        fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
+        const finalWidth = Math.max(0, Math.min(100, pct));
+        // Start at 0, then animate to target width
+        fill.style.width = '0%';
+        // Use requestAnimationFrame to ensure DOM is ready, then animate
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            fill.style.width = finalWidth + '%';
+          });
+        });
 
         track.appendChild(fill);
 
         const pctEl = document.createElement("div");
         pctEl.className = "bar-pct";
-        pctEl.textContent = pct.toFixed(1) + "%";
+        // Animate percentage count-up
+        let currentPct = 0;
+        const targetPct = pct;
+        const duration = 800;
+        const startTime = Date.now();
+        
+        function animatePct() {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          // Easing function
+          const eased = progress < 0.5 
+            ? 2 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          currentPct = targetPct * eased;
+          pctEl.textContent = currentPct.toFixed(1) + "%";
+          
+          if (progress < 1) {
+            requestAnimationFrame(animatePct);
+          } else {
+            pctEl.textContent = targetPct.toFixed(1) + "%";
+          }
+        }
+        animatePct();
 
         row.appendChild(labelEl);
         row.appendChild(track);
@@ -812,7 +936,12 @@
       }
     }
     
-    const predictDebounced = debounce(predictNow, 300);
+    let predictDebounced = debounce(predictNow);
+    
+    // Recreate debounced function when delay changes
+    debounceDelayEl.addEventListener('input', () => {
+      predictDebounced = debounce(predictNow);
+    });
 
     textEl.addEventListener("input", () => {
       if (realtimeEnabled && !pendingRequest) {
