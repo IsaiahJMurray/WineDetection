@@ -3,106 +3,611 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Wine Variety Classifier (Live)</title>
-  <img rel="icon" href="favicon.ico"></img>
+  <title>Wine Classifier</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    body { margin: 0; background: #0b0b0f; color: #e9e9ee; }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px; }
-    h1 { font-size: 20px; margin: 0 0 14px; font-weight: 650; }
-    .sub { color: #b9bac6; font-size: 13px; margin-bottom: 14px; line-height: 1.35; }
-    .row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #0f0f15;
+      --bg-tertiary: #151520;
+      --border: #1a1a25;
+      --border-light: #252530;
+      --text-primary: #e8e8f0;
+      --text-secondary: #a0a0b0;
+      --text-tertiary: #606070;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    
+    /* Subtle background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeInDown 0.6s ease-out;
+    }
+    
+    .header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    
+    .header p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      font-weight: 400;
+    }
+    
+    /* Main content grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    
+    @media (min-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .card:hover {
+      border-color: var(--border-light);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card:hover::before {
+      opacity: 1;
+    }
+    
+    /* Input card */
+    .input-card {
+      grid-column: 1 / -1;
+    }
+    
+    @media (min-width: 900px) {
+      .input-card {
+        grid-column: 1;
+      }
+    }
+    
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    
+    /* Textarea */
     textarea {
       width: 100%;
-      min-height: 120px;
+      min-height: 160px;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      line-height: 1.6;
       resize: vertical;
-      padding: 12px 12px;
-      border-radius: 12px;
-      border: 1px solid #2a2b35;
-      background: #12131a;
-      color: #e9e9ee;
       outline: none;
+      transition: all 0.2s ease;
+    }
+    
+    textarea::placeholder {
+      color: var(--text-tertiary);
+    }
+    
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      background: var(--bg-secondary);
+    }
+    
+    /* Request button */
+    .request-btn {
+      margin-top: 16px;
+      padding: 12px 24px;
+      background: var(--gradient);
+      border: none;
+      border-radius: 10px;
+      color: white;
       font-size: 14px;
-      line-height: 1.45;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: none;
+      align-self: flex-start;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
-    textarea:focus { border-color: #5a5cff; box-shadow: 0 0 0 3px rgba(90,92,255,0.18); }
-    .status { display: flex; gap: 10px; align-items: center; color: #b9bac6; font-size: 12px; }
-    .dot { width: 8px; height: 8px; border-radius: 99px; background: #666; }
-    .dot.ok { background: #2ecc71; }
-    .dot.bad { background: #e74c3c; }
-    .card {
-      border: 1px solid #242533;
-      background: #12131a;
-      border-radius: 12px;
-      padding: 14px;
+    
+    .request-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
-    .bars { display: grid; gap: 10px; }
-    .barRow { display: grid; grid-template-columns: 160px 1fr 64px; gap: 10px; align-items: center; }
-    .label { color: #e9e9ee; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .track { height: 10px; background: #1b1c26; border-radius: 999px; overflow: hidden; border: 1px solid #2a2b35; }
-    .fill { height: 100%; width: 0%; background: #5a5cff; border-radius: 999px; transition: width 160ms ease; }
-    .pct { color: #b9bac6; font-variant-numeric: tabular-nums; font-size: 12px; text-align: right; }
-    .small { margin-top: 10px; color: #b9bac6; font-size: 12px; }
-    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    input[type="text"]{
-      padding: 8px 10px; border-radius: 10px; border: 1px solid #2a2b35; background:#12131a; color:#e9e9ee;
-      min-width: 320px;
+    
+    .request-btn:active:not(:disabled) {
+      transform: translateY(0);
     }
-    button{
-      padding: 8px 10px; border-radius: 10px; border: 1px solid #2a2b35; background:#171827; color:#e9e9ee;
-      cursor:pointer;
+    
+    .request-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
-    button:hover{ border-color:#3a3b4a; }
-    button:disabled{ opacity:0.5; cursor:not-allowed; }
-    #requestBtn:hover{ background:#6a6cff; border-color:#6a6cff; }
-    #requestBtn:disabled{ background:#3a3b4a; border-color:#3a3b4a; }
-    code { color: #d7d7ff; }
+    
+    /* Queue notice */
+    .queue-notice {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+      color: var(--warning);
+      font-size: 13px;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    
+    /* Results card */
+    .results-card {
+      min-height: 300px;
+    }
+    
+    .results-placeholder {
+      color: var(--text-tertiary);
+      font-size: 14px;
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    /* Prediction bars */
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 70px;
+      gap: 16px;
+      align-items: center;
+    }
+    
+    .bar-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .bar-track {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .bar-fill {
+      height: 100%;
+      background: var(--gradient);
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+    }
+    
+    .bar-pct {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    /* Status indicator */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 16px;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+      animation: pulse 2s infinite;
+    }
+    
+    .status-dot.ok {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    }
+    
+    .status-dot.bad {
+      background: var(--error);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    }
+    
+    /* Advanced settings */
+    .advanced-toggle {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .advanced-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+    }
+    
+    .advanced-btn:hover {
+      color: var(--accent);
+    }
+    
+    .advanced-btn::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.3s ease;
+    }
+    
+    .advanced-btn.expanded::after {
+      transform: rotate(180deg);
+    }
+    
+    .advanced-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+    
+    .advanced-panel.visible {
+      max-height: 1000px;
+      opacity: 1;
+      margin-top: 20px;
+    }
+    
+    .advanced-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .advanced-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .advanced-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .advanced-input {
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    
+    .advanced-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    
+    .advanced-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-secondary {
+      padding: 8px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-secondary);
+      border-color: var(--border-light);
+    }
+    
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .stat-item {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .stat-value {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    /* Examples panel */
+    .examples-panel {
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .examples-panel.visible {
+      display: block;
+    }
+    
+    .examples-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 12px;
+    }
+    
+    select {
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    select:hover {
+      border-color: var(--border-light);
+    }
+    
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    
+    /* Animations */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+    
+    /* Meta info */
+    .meta {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+    
+    code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--accent);
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Wine Variety Classifier</h1>
-    <div class="sub">
-      Paste a tasting note. The page will call <code>/predict</code> and display live class probabilities (percent).
-      Tip: debounced updates (default 300ms).
+  <div class="container">
+    <div class="header">
+      <h1>Wine Classifier</h1>
+      <p>Enter a wine tasting note to predict the variety</p>
     </div>
 
-    <div class="row">
-      <div class="card">
-        <div class="controls">
-          <label style="font-size:12px;color:#b9bac6;">API URL</label>
-          <input id="apiUrl" type="text" value="https://ectal-unbelievingly-shella.ngrok-free.dev/predict" />
-          <button id="pingBtn">Ping</button>
-          <button id="loadExamplesBtn">Load Examples</button>
-          <span class="status"><span id="dot" class="dot"></span><span id="statusText">Not connected</span></span>
+    <div class="main-grid">
+      <!-- Input Card -->
+      <div class="card input-card">
+        <div class="card-title">Tasting Note</div>
+        <textarea id="text" placeholder="e.g., black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
+        
+        <div id="queueModeNotice" class="queue-notice">
+          ⚠️ Rate limited: Real-time updates disabled. Use the button below to queue requests.
         </div>
-        <div style="margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <div style="color:#b9bac6;font-size:12px;">Client ID: <code id="clientIdEl"></code></div>
-          <button id="copyClientBtn">Copy ID</button>
-          <div style="color:#b9bac6;font-size:12px;">Tokens: <span id="tokensEl">-</span></div>
-          <div style="color:#b9bac6;font-size:12px;">Queue: <span id="queueEl">-</span></div>
-          <div style="color:#b9bac6;font-size:12px;">Users (1h): <span id="usersHourEl">-</span></div>
+        
+        <button id="requestBtn" class="request-btn">Request Prediction</button>
+        
+        <div class="status-indicator">
+          <span id="dot" class="status-dot"></span>
+          <span id="statusText">Connecting...</span>
         </div>
-        <div id="examplesPanel" style="margin-top:10px;display:none;">
-          <label style="font-size:12px;color:#b9bac6;">Category</label>
-          <select id="categorySelect" style="margin-left:8px;padding:6px;border-radius:8px;background:#12131a;color:#e9e9ee;border:1px solid #2a2b35;"></select>
-          <label style="font-size:12px;color:#b9bac6;margin-left:12px;">Example</label>
-          <select id="exampleSelect" style="margin-left:8px;padding:6px;border-radius:8px;background:#12131a;color:#e9e9ee;border:1px solid #2a2b35;min-width:320px;"></select>
-        </div>
-        <div style="height:10px"></div>
-        <div style="position:relative;display:flex;flex-direction:column;gap:8px;">
-          <textarea id="text" placeholder="Example: black cherry, leather, cedar, firm tannins, smoky finish..."></textarea>
-          <div id="queueModeNotice" style="display:none;color:#ffa500;font-size:12px;padding:8px;background:#2a1f0a;border-radius:6px;border:1px solid #ffa50040;">
-            ⚠️ Rate limited: Real-time updates disabled. Use "Request Prediction" button to queue requests.
+        
+        <div class="meta" id="meta"></div>
+        
+        <!-- Advanced Settings -->
+        <div class="advanced-toggle">
+          <button id="advancedToggle" class="advanced-btn">Advanced Settings</button>
+          <div id="advancedPanel" class="advanced-panel">
+            <div class="advanced-section">
+              <div class="advanced-row">
+                <label class="advanced-label">API Endpoint</label>
+                <input id="apiUrl" type="text" class="advanced-input" value="https://ectal-unbelievingly-shella.ngrok-free.dev/predict" />
+              </div>
+              
+              <div class="advanced-buttons">
+                <button id="pingBtn" class="btn-secondary">Test Connection</button>
+                <button id="loadExamplesBtn" class="btn-secondary">Load Examples</button>
+              </div>
+              
+              <div id="examplesPanel" class="examples-panel">
+                <div class="examples-grid">
+                  <select id="categorySelect"></select>
+                  <select id="exampleSelect"></select>
+                </div>
+              </div>
+              
+              <div class="stats-row">
+                <div class="stat-item">Client ID: <span class="stat-value" id="clientIdEl">-</span></div>
+                <div class="stat-item">Tokens: <span class="stat-value" id="tokensEl">-</span></div>
+                <div class="stat-item">Queue: <span class="stat-value" id="queueEl">-</span></div>
+                <div class="stat-item">Users (1h): <span class="stat-value" id="usersHourEl">-</span></div>
+              </div>
+            </div>
           </div>
-          <button id="requestBtn" style="display:none;align-self:flex-end;padding:8px 20px;border-radius:8px;border:1px solid #5a5cff;background:#5a5cff;color:#fff;cursor:pointer;font-size:13px;font-weight:500;">Request Prediction</button>
         </div>
-        <div class="small" id="meta"></div>
       </div>
 
-      <div class="card">
-        <div style="font-size:13px;color:#b9bac6;margin-bottom:10px;">Predicted probabilities</div>
-        <div class="bars" id="bars"></div>
+      <!-- Results Card -->
+      <div class="card results-card">
+        <div class="card-title">Predictions</div>
+        <div class="bars" id="bars">
+          <div class="results-placeholder">Enter a tasting note to see predictions</div>
+        </div>
       </div>
     </div>
   </div>
@@ -124,6 +629,7 @@
       }
     }
 
+    // Elements
     const textEl = document.getElementById("text");
     const barsEl = document.getElementById("bars");
     const apiUrlEl = document.getElementById("apiUrl");
@@ -136,20 +642,29 @@
     const categorySelect = document.getElementById("categorySelect");
     const exampleSelect = document.getElementById("exampleSelect");
     const clientIdEl = document.getElementById("clientIdEl");
-    const copyClientBtn = document.getElementById("copyClientBtn");
     const tokensEl = document.getElementById("tokensEl");
     const queueEl = document.getElementById("queueEl");
     const usersHourEl = document.getElementById("usersHourEl");
     const requestBtn = document.getElementById("requestBtn");
     const queueModeNotice = document.getElementById("queueModeNotice");
+    const advancedToggle = document.getElementById("advancedToggle");
+    const advancedPanel = document.getElementById("advancedPanel");
     
     // Track real-time mode state
     let realtimeEnabled = true;
     let pendingRequest = false;
+    let advancedVisible = false;
+
+    // Advanced settings toggle
+    advancedToggle.addEventListener('click', () => {
+      advancedVisible = !advancedVisible;
+      advancedToggle.classList.toggle('expanded', advancedVisible);
+      advancedPanel.classList.toggle('visible', advancedVisible);
+    });
 
     function setStatus(ok, msg) {
       statusText.textContent = msg;
-      dot.className = "dot " + (ok ? "ok" : "bad");
+      dot.className = "status-dot " + (ok ? "ok" : "bad");
     }
 
     // --- client id stored in localStorage ---
@@ -159,10 +674,7 @@
       else clientId = 'c-' + Math.random().toString(36).slice(2,12);
       localStorage.setItem('qea_client_id', clientId);
     }
-    clientIdEl.textContent = clientId;
-    copyClientBtn.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(clientId); } catch (e) { /* ignore */ }
-    });
+    clientIdEl.textContent = clientId.substring(0, 8) + '...';
 
     // --- small fetch helper with retries for transient HTML interstitials ---
     async function fetchJsonWithRetry(url, opts = {}, retries = 2, backoff = 300) {
@@ -179,7 +691,6 @@
           return await res.json();
         } catch (e) {
           lastErr = e;
-          // small delay before retrying
           if (attempt < retries) await new Promise(r => setTimeout(r, backoff * (attempt + 1)));
         }
       }
@@ -187,49 +698,45 @@
     }
 
     function renderBars(predictions) {
-      // Sort by probability desc
       const entries = Object.entries(predictions).sort((a,b) => b[1] - a[1]);
-
       barsEl.innerHTML = "";
+      
       for (const [label, pct] of entries) {
         const row = document.createElement("div");
-        row.className = "barRow";
+        row.className = "bar-row";
 
         const labelEl = document.createElement("div");
-        labelEl.className = "label";
+        labelEl.className = "bar-label";
         labelEl.textContent = label;
 
         const track = document.createElement("div");
-        track.className = "track";
+        track.className = "bar-track";
 
         const fill = document.createElement("div");
-        fill.className = "fill";
+        fill.className = "bar-fill";
         fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
 
         track.appendChild(fill);
 
         const pctEl = document.createElement("div");
-        pctEl.className = "pct";
-        pctEl.textContent = pct.toFixed(2) + "%";
+        pctEl.className = "bar-pct";
+        pctEl.textContent = pct.toFixed(1) + "%";
 
         row.appendChild(labelEl);
         row.appendChild(track);
         row.appendChild(pctEl);
-
         barsEl.appendChild(row);
       }
     }
 
     async function predictNow() {
-      if (pendingRequest) {
-        return; // Prevent multiple simultaneous requests
-      }
+      if (pendingRequest) return;
       
       const apiUrl = apiUrlEl.value.trim();
       const text = textEl.value.trim();
 
       if (!text) {
-        barsEl.innerHTML = "<div style='color:#b9bac6;font-size:12px;'>Enter text to see predictions.</div>";
+        barsEl.innerHTML = "<div class='results-placeholder'>Enter text to see predictions.</div>";
         metaEl.textContent = "";
         return;
       }
@@ -265,12 +772,10 @@
           
           if (res.status === 429) {
             setStatus(false, "Rate limited");
-            metaEl.textContent = `Rate limit: ${errorMsg}. Use Request button when ready.`;
-            // Enter queue mode immediately
-            cancelDebounced(); // Cancel any pending debounced calls
+            metaEl.textContent = `Rate limit: ${errorMsg}`;
+            cancelDebounced();
             realtimeEnabled = false;
             updateRealtimeMode();
-            // Trigger status check to get accurate queue state
             setTimeout(() => fetchStatus(), 500);
           } else if (res.status === 413) {
             setStatus(false, "Request too long");
@@ -291,13 +796,10 @@
         const data = await res.json();
         const dt = (performance.now() - t0).toFixed(0);
 
-        setStatus(true, `OK (${dt} ms)`);
-        metaEl.textContent = `Device: ${data.device ?? "unknown"} | Updated in ${dt} ms`;
+        setStatus(true, `Connected (${dt}ms)`);
+        metaEl.textContent = `Device: ${data.device ?? "unknown"} • ${dt}ms`;
 
         renderBars(data.predictions || {});
-        
-        // Check status after successful request to see if we should re-enable real-time
-        // (This will be updated by the next status poll, but we can trigger a check)
         setTimeout(() => fetchStatus(), 500);
       } catch (e) {
         setStatus(false, "Error");
@@ -309,31 +811,27 @@
         requestBtn.textContent = "Request Prediction";
       }
     }
+    
     const predictDebounced = debounce(predictNow, 300);
 
-    // Only enable debounced input when real-time is enabled
     textEl.addEventListener("input", () => {
       if (realtimeEnabled && !pendingRequest) {
         predictDebounced();
       }
     });
     
-    // Request button handler
     requestBtn.addEventListener("click", async () => {
       await predictNow();
     });
 
     pingBtn.addEventListener("click", async () => {
-      // simple ping: run predict on a short dummy input
       const prev = textEl.value;
       if (!prev.trim()) textEl.value = "black cherry, oak, tannins";
       await predictNow();
       if (!prev.trim()) textEl.value = "";
     });
 
-    // --- Examples handling ---
     function examplesBaseUrl() {
-      // derive base from the predict URL; remove trailing /predict
       const api = apiUrlEl.value.trim();
       return api.replace(/\/predict\/?$/i, "").replace(/\/$/, "");
     }
@@ -342,9 +840,12 @@
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const data = await fetchJsonWithRetry(url, { method: "POST", headers: { "Content-Type": "text/plain", "Accept": "application/json" }, body: clientId }, 2, 300);
+        const data = await fetchJsonWithRetry(url, { 
+          method: "POST", 
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" }, 
+          body: clientId 
+        }, 2, 300);
 
-        // populate category select
         categorySelect.innerHTML = "";
         for (const k of Object.keys(data)) {
           const opt = document.createElement('option');
@@ -353,14 +854,13 @@
           categorySelect.appendChild(opt);
         }
 
-        // trigger fill for first category
         if (categorySelect.options.length > 0) {
           categorySelect.selectedIndex = 0;
           populateExamplesFor(categorySelect.value, data);
         }
 
-        examplesPanel.style.display = "block";
-        setStatus(true, "Loaded examples");
+        examplesPanel.classList.add('visible');
+        setStatus(true, "Examples loaded");
       } catch (e) {
         setStatus(false, "Examples load failed");
         console.error(e);
@@ -374,7 +874,7 @@
       for (const ex of arr) {
         const o = document.createElement('option');
         o.value = ex;
-        o.textContent = ex.length > 120 ? ex.slice(0, 120) + '...' : ex;
+        o.textContent = ex.length > 80 ? ex.slice(0, 80) + '...' : ex;
         exampleSelect.appendChild(o);
       }
     }
@@ -384,66 +884,61 @@
     });
 
     categorySelect.addEventListener('change', async () => {
-      // re-fetch to ensure we have the latest mapping (cheap)
       const base = examplesBaseUrl();
       const url = base + "/api/examples";
       try {
-        const data = await fetchJsonWithRetry(url, { method: "POST", headers: { "Content-Type": "text/plain", "Accept": "application/json" }, body: clientId }, 2, 300);
-          populateExamplesFor(categorySelect.value, data);
+        const data = await fetchJsonWithRetry(url, { 
+          method: "POST", 
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" }, 
+          body: clientId 
+        }, 2, 300);
+        populateExamplesFor(categorySelect.value, data);
       } catch (e) { console.error(e); }
     });
 
-    // Update real-time mode based on tokens and queue
     function updateRealtimeMode() {
       const tokens = parseInt(tokensEl.textContent) || 0;
       const queueLen = parseInt(queueEl.textContent) || 0;
-      
-      // Enable real-time if we have tokens and no queue
       const shouldEnable = tokens > 0 && queueLen === 0;
       
       if (shouldEnable !== realtimeEnabled) {
         realtimeEnabled = shouldEnable;
         
         if (realtimeEnabled) {
-          // Re-enable real-time: hide button and notice, enable debounced input
           requestBtn.style.display = 'none';
           queueModeNotice.style.display = 'none';
           if (textEl.value.trim() && !pendingRequest) {
-            // Trigger immediate update if text exists
             predictDebounced();
           }
         } else {
-          // Disable real-time: show button and notice, disable debounced input
-          cancelDebounced(); // Cancel any pending debounced calls
+          cancelDebounced();
           requestBtn.style.display = 'block';
           queueModeNotice.style.display = 'block';
         }
       }
     }
     
-    // --- status polling ---
     async function fetchStatus() {
       const base = examplesBaseUrl();
       const url = base + "/api/status";
       try {
-        const data = await fetchJsonWithRetry(url, { method: "POST", headers: { "Content-Type": "text/plain", "Accept": "application/json" }, body: clientId }, 2, 300);
+        const data = await fetchJsonWithRetry(url, { 
+          method: "POST", 
+          headers: { "Content-Type": "text/plain", "Accept": "application/json" }, 
+          body: clientId 
+        }, 2, 300);
         tokensEl.textContent = data.tokens;
         queueEl.textContent = data.queue_len;
         usersHourEl.textContent = data.users_past_hour;
-        
-        // Update real-time mode based on new status
         updateRealtimeMode();
       } catch (e) {
         console.error('fetchStatus failed', e);
         tokensEl.textContent = 'ERR';
         queueEl.textContent = '-';
-        metaEl.textContent = 'Status fetch failed: ' + String(e).slice(0,200);
       }
     }
 
-    // Initial status check and poll every 5s
     fetchStatus().then(() => {
-      // Set initial real-time mode after first status fetch
       updateRealtimeMode();
     });
     setInterval(fetchStatus, 5000);
@@ -452,19 +947,13 @@
       const v = exampleSelect.value || '';
       if (v) {
         textEl.value = v;
-        // If real-time is enabled, use debounced; otherwise use manual request
         if (realtimeEnabled && !pendingRequest) {
           predictDebounced();
         } else {
-          // In queue mode, user needs to click button manually
-          // But we can auto-trigger if they select an example
           predictNow();
         }
       }
     });
-
-    // initial
-    barsEl.innerHTML = "<div style='color:#b9bac6;font-size:12px;'>Enter text to see predictions.</div>";
   </script>
 </body>
 </html>
