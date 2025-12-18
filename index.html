@@ -144,15 +144,15 @@
     
     /* Input card */
     .input-card {
-      grid-column: none;
+      grid-column: 0;
     }
     
     @media (min-width: 900px) {
       .input-card {
-        grid-column: 0;
+        grid-column: none;
       }
       .results-card {
-        grid-column: 1;
+        grid-column: none;
         width: 100%;
       }
     }
@@ -250,7 +250,7 @@
     /* Results card */
     .results-card {
       min-height: 300px;
-      grid-column: none;
+      grid-column: 1;
     }
     
     .results-placeholder {
